@@ -201,6 +201,11 @@
         .enemy-threat-range {
             background-color: rgba(200, 50, 50, 0.07);
         }
+        .threat-range-foreshadow {
+    background-color: rgba(239, 68, 68, 0.25); /* 기존 0.05에서 0.25로 불투명도 증가 */
+    outline: 1px solid rgba(239, 68, 68, 0.5);
+    outline-offset: -1px;
+}
 
         @keyframes turn-glow {
             0% { 
@@ -1180,6 +1185,7 @@
     const BOARD_SIZE = 10;
     let characters = [];
     let selectedCharacterId = null;
+    let foreshadowingAction = null;
     let userId = null;
     let gameId = null; 
     let unsubscribeChars = null;
@@ -1414,24 +1420,31 @@
     unsubscribeSettings = onSnapshot(doc(db, 'games', gameId), async (docSnap) => { // async 추가
         if (docSnap.exists()) {
             const data = docSnap.data();
+            const oldGameState = gameState; // [수정] 이전 gameState를 기억합니다.
             const oldRoundPhase = roundPhase;
-            const oldGameState = gameState;
 
             SKILLS = data.skills || {};
             gameState = data.gameState || 'PREPARATION';
+            roundPhase = data.roundPhase || 'PLAYER_PHASE';
+
+            if (oldGameState === 'STARTED' && gameState === 'ENDED' && data.gameResult) {
+                showGameSummaryModal(data.gameResult.title, data.gameResult.message);
+            }
+
             if (oldGameState === 'PREPARATION' && gameState === 'STARTED') {
                 showBannerAnnouncement("FIGHT!", "게임 시작", '2rem', '4rem');
             }
-            roundPhase = data.roundPhase || 'PLAYER_PHASE';
             round = data.round || 1;
             maxRounds = data.maxRounds || 0;
             isAdminMoveAllowed = data.isAdminMoveAllowed !== undefined ? data.isAdminMoveAllowed : true;
+            
+            foreshadowingAction = data.foreshadowingAction || null;
+            
             boardBackgroundImage = data.boardBackgroundImage || '';
             pageBackgroundImage = data.pageBackgroundImage || '';
             document.body.style.setProperty('--page-background-image', pageBackgroundImage ? `url('${pageBackgroundImage}')` : 'none');
 
             const turnCharId = data.currentTurnCharId;
-
             actingEnemyId = data.actingEnemyId || null;
 
             if (gameState === 'STARTED' && oldRoundPhase !== roundPhase) {
@@ -1441,129 +1454,117 @@
                 adminSelectedEnemyId = null;
 
                 switch (roundPhase) {
-    case 'ENEMY_FORESHADOW':
-    showBannerAnnouncement(`Round ${round}`, "적 행동 예고");
-    if (isAdmin) {
-        determineEnemyNextActions();
-    }
-    break;
-    
-     case 'PLAYER_PHASE': { 
-    showBannerAnnouncement(`Round ${round}`, "아군 턴 시작");
-        if (isAdmin) {
-        const livingPCs = characters.filter(c => c.type === 'PC' && c.hp > 0 && c.x !== null);
-        if (livingPCs.length > 0) {
-            const batch = writeBatch(db);
-            let mpWasRecovered = false;
-            
-            for (const pc of livingPCs) {
-                const charRef = doc(db, 'games', gameId, 'characters', pc.id);
-                let updates = {};
-
-                // MP 회복 로직
-                const newMp = Math.min(pc.maxMp, pc.mp + MP_REGEN_PER_TURN);
-                if (newMp > pc.mp) {
-                    updates.mp = newMp;
-                    mpWasRecovered = true;
-                }
-
-                const effects = pc.statusEffects || [];
-                if (effects.length > 0) {
-                    const isStunned = effects.some(effect => effect.id === 'stunned');
-                    if (isStunned) {
-                        logAction(`💫 ${pc.name}은(는) [행동 불가] 상태이므로 턴이 자동으로 넘어갑니다.`, "system");
-                        updates.hasActedThisRound = true;
-                    }
-
-                    let finalHp = pc.hp;
-                    let hpChanged = false;
-                    effects.forEach(effect => {
-                        if (effect.effectType === 'heal') {
-                            const healAmount = effect.value || 15;
-                            finalHp = Math.min(pc.maxHp, finalHp + healAmount);
-                            hpChanged = true;
-                            logAction(`🌿 ${pc.name}이(가) [${effect.name}] 효과로 **${healAmount} HP**를 회복했습니다!`, "heal");
-                        } else if (effect.effectType === 'damage') {
-                            const damageAmount = effect.value || 10;
-                            finalHp = Math.max(0, finalHp - damageAmount);
-                            hpChanged = true;
-                            logAction(`☠️ ${pc.name}이(가) [${effect.name}] 효과로 **${damageAmount} 피해**를 입었습니다!`, "damage");
+                    case 'ENEMY_FORESHADOW':
+                        showBannerAnnouncement(`Round ${round}`, "적 행동 예고");
+                        if (isAdmin) {
+                            determineEnemyNextActions();
                         }
-                    });
-
-                    if (hpChanged) {
-                        updates.hp = finalHp;
-                    }
-                }
-                
-                if (Object.keys(updates).length > 0) {
-                    batch.update(charRef, updates);
-                }
-            }
-
-            // 모든 변경사항을 한번에 적용
-            await batch.commit();
-            if (mpWasRecovered) {
-                    await logAction(`💧 모든 아군이 ${MP_REGEN_PER_TURN}의 MP를 회복했습니다.`, "system");
-            }
-        }
-        }
-        break;
-    }
-        
-    case 'ENEMY_EXECUTION': { 
-    showBannerAnnouncement(`Round ${round}`, "적군 턴 시작");
-    if (isAdmin) {
-        const livingEnemies = characters.filter(c => c.type === 'ENEMY' && c.hp > 0 && c.x !== null);
-        if (livingEnemies.length > 0) {
-            const batch = writeBatch(db);
-            let mpWasRecovered = false;
-
-            for (const enemy of livingEnemies) {
-                const charRef = doc(db, 'games', gameId, 'characters', enemy.id);
-                let updates = {};
-
-                const newMp = Math.min(enemy.maxMp, enemy.mp + MP_REGEN_PER_TURN);
-                if (newMp > enemy.mp) {
-                    updates.mp = newMp;
-                    mpWasRecovered = true;
-                }
-                const effects = enemy.statusEffects || [];
-                if (effects.length > 0) {
-                    let finalHp = enemy.hp;
-                    let hpChanged = false;
-                    effects.forEach(effect => {
-                        if (effect.effectType === 'heal') {
-                            const healAmount = effect.value || 15;
-                            finalHp = Math.min(enemy.maxHp, finalHp + healAmount);
-                            hpChanged = true;
-                            logAction(`🌿 ${enemy.name}이(가) [${effect.name}] 효과로 **${healAmount} HP**를 회복했습니다!`, "heal");
-                        } else if (effect.effectType === 'damage') {
-                            const damageAmount = effect.value || 10;
-                            finalHp = Math.max(0, finalHp - damageAmount);
-                            hpChanged = true;
-                            logAction(`☠️ ${enemy.name}이(가) [${effect.name}] 효과로 **${damageAmount} 피해**를 입었습니다!`, "damage");
+                        break;
+                    
+                    case 'PLAYER_PHASE': { 
+                        showBannerAnnouncement(`Round ${round}`, "아군 턴 시작");
+                        if (isAdmin) {
+                            const livingPCs = characters.filter(c => c.type === 'PC' && c.hp > 0 && c.x !== null);
+                            if (livingPCs.length > 0) {
+                                const batch = writeBatch(db);
+                                let mpWasRecovered = false;
+                                
+                                for (const pc of livingPCs) {
+                                    const charRef = doc(db, 'games', gameId, 'characters', pc.id);
+                                    let updates = {};
+                                    const newMp = Math.min(pc.maxMp, pc.mp + MP_REGEN_PER_TURN);
+                                    if (newMp > pc.mp) {
+                                        updates.mp = newMp;
+                                        mpWasRecovered = true;
+                                    }
+                                    const effects = pc.statusEffects || [];
+                                    if (effects.length > 0) {
+                                        const isStunned = effects.some(effect => effect.id === 'stunned');
+                                        if (isStunned) {
+                                            logAction(`💫 ${pc.name}은(는) [행동 불가] 상태이므로 턴이 자동으로 넘어갑니다.`, "system");
+                                            updates.hasActedThisRound = true;
+                                        }
+                                        let finalHp = pc.hp;
+                                        let hpChanged = false;
+                                        effects.forEach(effect => {
+                                            if (effect.effectType === 'heal') {
+                                                const healAmount = effect.value || 15;
+                                                finalHp = Math.min(pc.maxHp, finalHp + healAmount);
+                                                hpChanged = true;
+                                                logAction(`🌿 ${pc.name}이(가) [${effect.name}] 효과로 **${healAmount} HP**를 회복했습니다!`, "heal");
+                                            } else if (effect.effectType === 'damage') {
+                                                const damageAmount = effect.value || 10;
+                                                finalHp = Math.max(0, finalHp - damageAmount);
+                                                hpChanged = true;
+                                                logAction(`☠️ ${pc.name}이(가) [${effect.name}] 효과로 **${damageAmount} 피해**를 입었습니다!`, "damage");
+                                            }
+                                        });
+                                        if (hpChanged) {
+                                            updates.hp = finalHp;
+                                        }
+                                    }
+                                    if (Object.keys(updates).length > 0) {
+                                        batch.update(charRef, updates);
+                                    }
+                                }
+                                await batch.commit();
+                                if (mpWasRecovered) {
+                                        await logAction(`💧 모든 아군이 ${MP_REGEN_PER_TURN}의 MP를 회복했습니다.`, "system");
+                                }
+                            }
                         }
-                    });
-
-                    if (hpChanged) {
-                        updates.hp = finalHp;
+                        break;
                     }
+                    
+                    case 'ENEMY_EXECUTION': { 
+                        showBannerAnnouncement(`Round ${round}`, "적군 턴 시작");
+                        if (isAdmin) {
+                            const livingEnemies = characters.filter(c => c.type === 'ENEMY' && c.hp > 0 && c.x !== null);
+                            if (livingEnemies.length > 0) {
+                                const batch = writeBatch(db);
+                                let mpWasRecovered = false;
+                                for (const enemy of livingEnemies) {
+                                    const charRef = doc(db, 'games', gameId, 'characters', enemy.id);
+                                    let updates = {};
+                                    const newMp = Math.min(enemy.maxMp, enemy.mp + MP_REGEN_PER_TURN);
+                                    if (newMp > enemy.mp) {
+                                        updates.mp = newMp;
+                                        mpWasRecovered = true;
+                                    }
+                                    const effects = enemy.statusEffects || [];
+                                    if (effects.length > 0) {
+                                        let finalHp = enemy.hp;
+                                        let hpChanged = false;
+                                        effects.forEach(effect => {
+                                            if (effect.effectType === 'heal') {
+                                                const healAmount = effect.value || 15;
+                                                finalHp = Math.min(enemy.maxHp, finalHp + healAmount);
+                                                hpChanged = true;
+                                                logAction(`🌿 ${enemy.name}이(가) [${effect.name}] 효과로 **${healAmount} HP**를 회복했습니다!`, "heal");
+                                            } else if (effect.effectType === 'damage') {
+                                                const damageAmount = effect.value || 10;
+                                                finalHp = Math.max(0, finalHp - damageAmount);
+                                                hpChanged = true;
+                                                logAction(`☠️ ${enemy.name}이(가) [${effect.name}] 효과로 **${damageAmount} 피해**를 입었습니다!`, "damage");
+                                            }
+                                        });
+                                        if (hpChanged) {
+                                            updates.hp = finalHp;
+                                        }
+                                    }
+                                    if (Object.keys(updates).length > 0) {
+                                        batch.update(charRef, updates);
+                                    }
+                                } 
+                                await batch.commit();
+                                if (mpWasRecovered) {
+                                    await logAction(`💧 모든 적군이 ${MP_REGEN_PER_TURN}의 MP를 회복했습니다.`, "system");
+                                }
+                            }
+                        }
+                        break;
+                    } 
                 }
-                
-                if (Object.keys(updates).length > 0) {
-                    batch.update(charRef, updates);
-                }
-            } 
-            await batch.commit();
-            if (mpWasRecovered) {
-                await logAction(`💧 모든 적군이 ${MP_REGEN_PER_TURN}의 MP를 회복했습니다.`, "system");
-            }
-        }
-        }
-        break;
-    } 
-}
             }
             
             const currentTurnChar = characters.find(c => c.id === turnCharId);
@@ -1605,7 +1606,6 @@
         renderLogs(snapshot.docs.map(doc => doc.data()));
     });
 }
-
        const delay = ms => new Promise(res => setTimeout(res, ms));
     async function logAction(message, type = "system") { if (gameId) await addDoc(collection(db, "games", gameId, "logs"), { message, type, timestamp: serverTimestamp() }); }
     async function advanceRoundPhase() {
@@ -1802,19 +1802,21 @@ async function executeSingleEnemyAction(enemyId) {
         const target = characters.find(c => c.id === enemy.nextAction.targetId);
         const skill = SKILLS[enemy.nextAction.skillId];
 
-        if (!target || target.hp <= 0 || !skill) {
+        if (!target || !skill) {
             await updateDoc(doc(db, 'games', gameId, 'characters', enemy.id), { nextAction: null });
             continue;
         }
 
         let bestMovePos = { x: enemy.x, y: enemy.y };
-        const moveRange = enemy.moveRange || SKILLS['move']?.range || 1;
+        const moveRange = enemy.moveRange !== undefined ? enemy.moveRange : (SKILLS['move']?.range || 1);
         const attackRange = skill.range;
 
-        if (getDistance(enemy, target) > attackRange) {
-            let minMoveDistance = Infinity;
+        const phantomEnemy = { ...enemy };
+        if (!isAttackPossible(phantomEnemy, target, attackRange)) {
+            let minMoveDistance = Infinity; // 공격하기 위해 움직여야 하는 최소 거리
             let foundAttackSpot = false;
 
+            // 1. 공격 가능한 최적의 위치 탐색
             for (let dy = -moveRange; dy <= moveRange; dy++) {
                 for (let dx = -moveRange; dx <= moveRange; dx++) {
                     if (Math.abs(dx) + Math.abs(dy) > moveRange) continue;
@@ -1823,20 +1825,45 @@ async function executeSingleEnemyAction(enemyId) {
                     const moveY = enemy.y + dy;
 
                     if (!canPlaceCharacter(enemy, moveX, moveY)) continue;
-
-                    const movedPos = { x: moveX, y: moveY };
-                    if (getDistance(movedPos, target) <= attackRange) {
+                    
+                    const phantomAttacker = { ...enemy, x: moveX, y: moveY };
+                    if (isAttackPossible(phantomAttacker, target, attackRange)) {
                         foundAttackSpot = true;
                         const moveDistance = Math.abs(dx) + Math.abs(dy);
                         if (moveDistance < minMoveDistance) {
                             minMoveDistance = moveDistance;
+                            bestMovePos = { x: moveX, y: moveY };
+                        }
+                    }
+                }
+            }
+
+            // 2. 공격 가능한 위치가 없을 경우, 목표를 향해 최대한 이동
+            if (!foundAttackSpot) {
+                let minTargetDistance = getDistance(enemy, target); // 목표까지의 현재 거리
+
+                for (let dy = -moveRange; dy <= moveRange; dy++) {
+                    for (let dx = -moveRange; dx <= moveRange; dx++) {
+                        if (Math.abs(dx) + Math.abs(dy) > moveRange) continue;
+
+                        const moveX = enemy.x + dx;
+                        const moveY = enemy.y + dy;
+
+                        if (!canPlaceCharacter(enemy, moveX, moveY)) continue;
+                        
+                        const movedPos = { x: moveX, y: moveY };
+                        const targetDistance = getDistance(movedPos, target);
+                        
+                        if (targetDistance < minTargetDistance) {
+                            minTargetDistance = targetDistance;
                             bestMovePos = movedPos;
                         }
                     }
                 }
             }
         }
-
+        
+        // 최종 결정된 위치로 이동
         if (bestMovePos.x !== enemy.x || bestMovePos.y !== enemy.y) {
             await logAction(`🏃 ${enemy.name}이(가) 이동합니다.`, "move");
             await updateDoc(doc(db, 'games', gameId, 'characters', enemy.id), { x: bestMovePos.x, y: bestMovePos.y });
@@ -1846,21 +1873,32 @@ async function executeSingleEnemyAction(enemyId) {
         const updatedEnemy = characters.find(c => c.id === enemy.id);
         const updatedTarget = characters.find(c => c.id === target.id);
 
-        if (updatedTarget && updatedTarget.hp > 0 && getDistance(updatedEnemy, updatedTarget) <= attackRange) {
-            highlightRange(updatedEnemy, skill.id);
-            await delay(1200); 
+        if (updatedTarget && updatedTarget.hp > 0 && isAttackPossible(updatedEnemy, updatedTarget, attackRange)) {
+            await updateDoc(doc(db, 'games', gameId), {
+                foreshadowingAction: {
+                    charId: updatedEnemy.id,
+                    skillId: skill.id
+                }
+            });
+            await delay(1200);
 
-            await executeSkill(updatedEnemy, updatedTarget, skill.id, false);
+            await executeSkill(updatedEnemy, updatedTarget, skill.id);
 
-            highlightRange(null, null); 
+            await updateDoc(doc(db, 'games', gameId), {
+                foreshadowingAction: null
+            });
             await delay(1000);
+        } else if (bestMovePos.x !== enemy.x || bestMovePos.y !== enemy.y) {
+            // 이동은 했지만 공격은 못한 경우
+            await logAction(`...${enemy.name}이(가) ${target.name}을(를) 향해 접근합니다.`, "move");
+            await delay(500);
         } else {
+            // 이동도, 공격도 못한 경우
             await logAction(`...하지만 ${enemy.name}의 공격 범위에 대상이 없습니다!`, "system");
             await delay(500);
         }
-
+        
         await updateDoc(doc(db, 'games', gameId, 'characters', enemy.id), { nextAction: null });
-
         await updateDoc(doc(db, 'games', gameId), { actingEnemyId: null });
     }
 
@@ -1964,6 +2002,32 @@ function renderForeshadowing() {
         if (!pos1 || !pos2) return Infinity;
         return Math.abs(pos1.x - pos2.x) + Math.abs(pos1.y - pos2.y);
     }
+    // [추가] 두 캐릭터의 크기를 모두 고려하여 실제 공격 가능한지 판단하는 함수
+function isAttackPossible(attacker, target, attackRange) {
+    if (!attacker || !target) return false;
+    const attackerSize = attacker.size || 1;
+    const targetSize = target.size || 1;
+
+    // 공격자가 차지하는 모든 칸을 순회
+    for (let ax = 0; ax < attackerSize; ax++) {
+        for (let ay = 0; ay < attackerSize; ay++) {
+            // 대상이 차지하는 모든 칸을 순회
+            for (let tx = 0; tx < targetSize; tx++) {
+                for (let ty = 0; ty < targetSize; ty++) {
+                    const attackerCell = { x: attacker.x + ax, y: attacker.y + ay };
+                    const targetCell = { x: target.x + tx, y: target.y + ty };
+                    
+                    // 두 칸 사이의 거리가 공격 범위 내에 있으면 즉시 true 반환
+                    if (getDistance(attackerCell, targetCell) <= attackRange) {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    // 모든 칸을 확인해도 공격 가능한 경우가 없으면 false 반환
+    return false;
+}
 
     // 자동 턴을 실행하는 메인 AI 함수
     async function runAutoTurn(character) {
@@ -2387,40 +2451,61 @@ async function applyStatusEffect(target, effectInfo) {
     await logAction(`${icon} ${target.name}이(가) [${newEffect.name}] 효과를 받았습니다! (${newEffect.turnsRemaining}턴 지속)`, "system");
 }
     async function showGameSummaryModal(title, message) {
-        await setDoc(doc(db, 'games', gameId), { gameState: 'ENDED' }, { merge: true });
+    const remainingPCs = characters.filter(c => c.type === 'PC' && c.hp > 0 && c.x !== null).length;
+    const totalPCs = characters.filter(c => c.type === 'PC').length;
+    const remainingEnemies = characters.filter(c => c.type === 'ENEMY' && c.hp > 0 && c.x !== null).length;
+    const totalEnemies = characters.filter(c => c.type === 'ENEMY').length;
 
-        const remainingPCs = characters.filter(c => c.type === 'PC' && c.hp > 0 && c.x !== null).length;
-        const totalPCs = characters.filter(c => c.type === 'PC').length;
-        const remainingEnemies = characters.filter(c => c.type === 'ENEMY' && c.hp > 0 && c.x !== null).length;
-        const totalEnemies = characters.filter(c => c.type === 'ENEMY').length;
+    const resultMessage = `
+        ${message}
+        <hr class="my-4 border-gray-600">
+        <h4 class="font-bold text-lg mb-2">최종 결과</h4>
+        <p>남은 아군: ${remainingPCs} / ${totalPCs}</p>
+        <p>남은 적군: ${remainingEnemies} / ${totalEnemies}</p>
+    `;
 
-        const resultMessage = `
-            ${message}
-            <hr class="my-4 border-gray-600">
-            <h4 class="font-bold text-lg mb-2">최종 결과</h4>
-            <p>남은 아군: ${remainingPCs} / ${totalPCs}</p>
-            <p>남은 적군: ${remainingEnemies} / ${totalEnemies}</p>
-        `;
-
-        showCustomModal(title, resultMessage, [{ text: "확인", class: "bg-indigo-600" }]);
+    let buttons;
+    if (isAdmin) {
+        buttons = [{
+            text: "확인 (게임 재시작)",
+            class: "bg-indigo-600",
+            onClick: async () => {
+                await resetAllGameData();
+            }
+        }];
+    } else {
+        buttons = [{
+            text: "확인",
+            class: "bg-indigo-600"
+        }];
     }
+
+    showCustomModal(title, resultMessage, buttons);
+}
         async function checkGameEndCondition() {
-        const remainingPCs = characters.filter(c => c.type === 'PC' && c.hp > 0 && c.x !== null).length;
-        const remainingEnemies = characters.filter(c => c.type === 'ENEMY' && c.hp > 0 && c.x !== null).length;
+    if (!isAdmin) return false;
 
-        // 아군이 모두 쓰러졌을 경우
-        if (remainingPCs === 0) {
-            await showGameSummaryModal("패배...", "모든 아군이 쓰러졌습니다.");
-            return true; // 게임 종료됨
-        } 
-        // 적군이 모두 쓰러졌을 경우
-        else if (remainingEnemies === 0) {
-            await showGameSummaryModal("승리!", "모든 적을 물리쳤습니다.");
-            return true; // 게임 종료됨
-        }
+    const remainingPCs = characters.filter(c => c.type === 'PC' && c.hp > 0 && c.x !== null).length;
+    const remainingEnemies = characters.filter(c => c.type === 'ENEMY' && c.hp > 0 && c.x !== null).length;
 
-        return false; // 게임 계속됨
+    let gameResult = null;
+
+    if (remainingPCs === 0) {
+        gameResult = { title: "패배...", message: "모든 아군이 쓰러졌습니다." };
+    } else if (remainingEnemies === 0) {
+        gameResult = { title: "승리!", message: "모든 적을 물리쳤습니다." };
     }
+
+    if (gameResult) {
+        await setDoc(doc(db, 'games', gameId), { 
+            gameState: 'ENDED',
+            gameResult: gameResult // 모든 유저가 이 정보를 보고 팝업을 띄우게 됩니다.
+        }, { merge: true });
+        return true; // 게임 종료됨
+    }
+
+    return false; // 게임 계속됨
+}
     async function executeSkill(attacker, target, skillId) {
     const skill = SKILLS[skillId];
     if (!skill || !target) return;
@@ -3137,66 +3222,84 @@ function renderSkillButtons(selectedChar) {
         }).join('') || `<li class="log-system">아직 기록된 행동이 없습니다.</li>`;
     }
     function renderForeshadowRanges() {
-    // 1. 기존에 표시되던 모든 종류의 범위를 깨끗하게 지웁니다.
-    document.querySelectorAll('.combat-range').forEach(cell => cell.classList.remove('combat-range', 'attack-range-move', 'attack-range-skill', 'heal-range-skill'));
+    document.querySelectorAll('.combat-range, .threat-range-foreshadow').forEach(cell => cell.classList.remove('combat-range', 'attack-range-move', 'attack-range-skill', 'heal-range-skill', 'threat-range-foreshadow'));
 
-    // 2. '적 행동 예고' 단계가 아니면 아무것도 하지 않습니다.
     if (gameState !== 'STARTED' || roundPhase !== 'ENEMY_FORESHADOW') {
         return;
     }
 
-    // 3. 행동이 예고된(nextAction이 있는) 모든 적을 찾습니다.
+    const totalThreatCells = new Set();
     const foreshadowingEnemies = characters.filter(c => c.nextAction && c.hp > 0);
-    
-    // 4. 모든 적의 스킬 범위를 합산할 Set을 준비합니다. (중복된 칸을 자동으로 처리)
-    const allRangeCells = new Set();
 
     foreshadowingEnemies.forEach(char => {
         const skillId = char.nextAction.skillId;
-        // 스킬 정보가 없거나, '이동' 스킬이면 범위를 표시하지 않습니다.
         if (!SKILLS[skillId] || skillId === 'move') return;
 
         const skill = SKILLS[skillId];
-        const range = skill.range;
-        const size = char.size || 1;
-        const shape = skill.rangeShape || 'diamond';
+        const moveSkill = SKILLS['move'];
 
-        // 기존 highlightRange 함수의 범위 계산 로직을 그대로 사용합니다.
-        for (let ex = 0; ex < size; ex++) {
-            for (let ey = 0; ey < size; ey++) {
-                const originX = char.x + ex, originY = char.y + ey;
-                for (let dy = -range; dy <= range; dy++) {
-                    for (let dx = -range; dx <= range; dx++) {
-                        let inShape = (shape === 'diamond' && Math.abs(dx) + Math.abs(dy) <= range) ||
-                                      (shape === 'square' && Math.abs(dx) <= range && Math.abs(dy) <= range) ||
-                                      (shape === 'cross' && ((dx === 0 && Math.abs(dy) <= range) || (dy === 0 && Math.abs(dx) <= range)));
-                        if (inShape) {
-                            const targetX = originX + dx, targetY = originY + dy;
-                            if (targetX >= 0 && targetX < BOARD_SIZE && targetY >= 0 && targetY < BOARD_SIZE) {
-                                allRangeCells.add(`${targetX},${targetY}`);
-                            }
+        const moveRange = char.moveRange !== undefined ? char.moveRange : (moveSkill?.range || 0);
+        const reachableMoveCells = new Set();
+        reachableMoveCells.add(`${char.x},${char.y}`);
+
+        if (moveRange > 0) {
+            for (let dy = -moveRange; dy <= moveRange; dy++) {
+                for (let dx = -moveRange; dx <= moveRange; dx++) {
+                    if (Math.abs(dx) + Math.abs(dy) <= moveRange) {
+                        const moveX = char.x + dx;
+                        const moveY = char.y + dy;
+                        if (canPlaceCharacter(char, moveX, moveY)) {
+                            reachableMoveCells.add(`${moveX},${moveY}`);
                         }
                     }
                 }
             }
         }
+
+        const skillRange = skill.range;
+        const skillShape = skill.rangeShape || 'diamond';
+        const charSize = char.size || 1;
+
+        reachableMoveCells.forEach(cellCoord => {
+            const [moveX, moveY] = cellCoord.split(',').map(Number);
+
+            for (let ex = 0; ex < charSize; ex++) {
+                for (let ey = 0; ey < charSize; ey++) {
+                    const originX = moveX + ex;
+                    const originY = moveY + ey;
+
+                    for (let dy = -skillRange; dy <= skillRange; dy++) {
+                        for (let dx = -skillRange; dx <= skillRange; dx++) {
+                            let inShape = (skillShape === 'diamond' && Math.abs(dx) + Math.abs(dy) <= skillRange) ||
+                                          (skillShape === 'square' && Math.abs(dx) <= skillRange && Math.abs(dy) <= skillRange) ||
+                                          (skillShape === 'cross' && ((dx === 0 && Math.abs(dy) <= skillRange) || (dy === 0 && Math.abs(dx) <= skillRange)));
+                            
+                            if (inShape) {
+                                const targetX = originX + dx;
+                                const targetY = originY + dy;
+                                if (targetX >= 0 && targetX < BOARD_SIZE && targetY >= 0 && targetY < BOARD_SIZE) {
+                                    totalThreatCells.add(`${targetX},${targetY}`);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
     });
 
-    // 5. 계산된 모든 범위 칸에 CSS 클래스를 추가하여 화면에 표시합니다.
-    allRangeCells.forEach(coord => {
+    totalThreatCells.forEach(coord => {
         const [x, y] = coord.split(',');
         const cell = document.querySelector(`.cell[data-x='${x}'][data-y='${y}']`);
-        // 예고 범위는 공격 스킬 범위와 동일한 붉은색으로 표시합니다.
-        if (cell) cell.classList.add('combat-range', 'attack-range-skill');
+        if (cell) cell.classList.add('threat-range-foreshadow');
     });
 }
    function render() {
     if (!isBoardInitialized) initializeBoard();
 
-    // --- 이 윗부분(토큰 생성 및 상태 표시)은 기존 render 함수와 동일합니다. ---
     document.querySelectorAll('.cell').forEach(cell => {
         cell.innerHTML = '';
-        cell.classList.remove('tile-obstacle', 'tile-damage');
+        cell.classList.remove('tile-obstacle', 'tile-damage', 'combat-range', 'attack-range-move', 'attack-range-skill', 'heal-range-skill', 'threat-range-foreshadow');
         const x = parseInt(cell.dataset.x), y = parseInt(cell.dataset.y);
         const tile = boardTiles[`${x},${y}`];
         if (tile) cell.classList.add(`tile-${tile.type}`);
@@ -3220,7 +3323,7 @@ function renderSkillButtons(selectedChar) {
                     ghostToken.innerHTML = `<span class="token-placeholder font-title">${char.name.charAt(0)}</span>`;
                 }
                 cell.appendChild(ghostToken);
-                return; 
+                return;
             }
 
             const token = document.createElement('div');
@@ -3228,7 +3331,6 @@ function renderSkillButtons(selectedChar) {
             token.style.width = `${char.size * 100}%`;
             token.style.height = `${char.size * 100}%`;
             const isMyLargeCharMoving = (char.id === selectedCharacterId && selectedSkill === 'move' && char.size > 1);
-
             let isTargetingLargeEnemy = false;
             const attacker = characters.find(c => c.id === selectedCharacterId);
             const currentSkill = SKILLS[selectedSkill];
@@ -3241,7 +3343,6 @@ function renderSkillButtons(selectedChar) {
             }
             if (char.type === 'ENEMY') token.classList.add('enemy-token');
             if (char.id === selectedCharacterId || char.id === adminSelectedEnemyId) token.classList.add('selected-character');
-
             const isActionablePC = char.type === 'PC' && gameState === 'STARTED' && roundPhase === 'PLAYER_PHASE' && !char.hasActedThisRound;
             if (isActionablePC) {
                 token.classList.add('current-turn-glow');
@@ -3321,18 +3422,21 @@ function renderSkillButtons(selectedChar) {
         }
     }
 
-    if (roundPhase === 'ENEMY_FORESHADOW') {
+    if (roundPhase === 'ENEMY_EXECUTION' && foreshadowingAction) {
+        const actingChar = characters.find(c => c.id === foreshadowingAction.charId);
+        if (actingChar) {
+            highlightRange(actingChar, foreshadowingAction.skillId);
+        }
+    }
+    else if (roundPhase === 'ENEMY_FORESHADOW') {
         renderForeshadowRanges();
-    } 
+    }
     else {
         const charForUi = characters.find(c => c.id === selectedCharacterId || c.id === previewCharacterId);
         if (gameState === 'STARTED' && charForUi) {
             highlightRange(charForUi, selectedSkill || 'move');
-        } else {
-            highlightRange(null, null); 
         }
     }
-
 
     const charForUi = characters.find(c => c.id === selectedCharacterId || c.id === previewCharacterId);
     renderSkillButtons(charForUi);
@@ -3346,7 +3450,6 @@ function renderSkillButtons(selectedChar) {
                 ⏭ 아군 턴 강제 종료
             </button>
         `;
-
         document.getElementById('admin-end-player-phase-btn').onclick = async () => {
             await logAction('⏭ 관리자가 아군 턴을 강제로 종료했습니다.', 'admin');
             await advanceRoundPhase();
@@ -3354,7 +3457,7 @@ function renderSkillButtons(selectedChar) {
     }
     updateCharacterList();
     renderCharacterSelectionOverlay();
-    renderForeshadowing(); // 점선 예고는 계속 유지됩니다.
+    renderForeshadowing();
 }
 
     async function removeCharacterPlacement(charId, charName) {
@@ -3650,20 +3753,21 @@ async function resetAllCharacterStats() {
     }
 
     async function resetAllGameData() {
-        if (!gameId) return;
+    if (!gameId) return;
 
-        await resetAllCharacterStats();
+    await resetAllCharacterStats();
+    await setDoc(doc(db, 'games', gameId, 'board', 'tiles'), { tiles: {} });
+    await setDoc(doc(db, 'games', gameId), { 
+        gameState: 'PREPARATION', 
+        currentTurnIndex: 0, 
+        currentTurnCharId: null, 
+        round: 1,
+        roundPhase: null, 
+        gameResult: deleteField() 
+    }, { merge: true });
 
-        await setDoc(doc(db, 'games', gameId, 'board', 'tiles'), { tiles: {} });
-        await setDoc(doc(db, 'games', gameId), { 
-            gameState: 'PREPARATION', 
-            currentTurnIndex: 0, 
-            currentTurnCharId: null, 
-            round: 1 
-        }, { merge: true });
-
-        await logAction(`⚠️ 관리자가 전체 게임을 초기화했습니다. 모든 캐릭터의 HP가 회복되고 재배치를 기다립니다.`, "admin");
-    }
+    await logAction(`⚠️ 관리자가 전체 게임을 초기화했습니다. 모든 캐릭터의 HP가 회복되고 재배치를 기다립니다.`, "admin");
+}
 
 
     function confirmExitMapEditMode() {
