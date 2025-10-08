@@ -960,6 +960,37 @@
     outline: 2px solid var(--accent-primary);
     outline-offset: -2px;
 }
+
+.combat-text {
+    position: fixed; 
+    font-size: 1.5rem;
+    font-weight: bold;
+    font-family: 'Cinzel', serif;
+    pointer-events: none;
+    z-index: 110; 
+    text-shadow: 0 0 5px black, 0 0 5px black;
+    animation: float-up-and-fade 1.5s ease-out forwards;
+}
+
+.combat-text.damage {
+    color: #F87171; /* --log-damage */
+}
+
+.combat-text.heal {
+    color: #4ADE80; /* --log-heal */
+}
+
+@keyframes float-up-and-fade {
+    0% {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -150%); /* 위로 100% 더 이동 */
+        opacity: 0;
+    }
+}
+
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4 overflow-x-hidden pt-60">
@@ -1204,6 +1235,8 @@
     let unsubscribeChars = null;
     let unsubscribeSettings = null;
     let unsubscribeLogs = null;
+    let unsubscribeCombatEvents = null;
+const combatTextStartTime = new Date();
     let previousTurnCharId = null; 
     let isBoardInitialized = false; 
     let selectedSkill = null; 
@@ -1338,30 +1371,31 @@
 
     async function createGame() { await joinGame(generateGameId(), true); }
     async function joinGame(id, isNewGame = false) {
-        if (!id || id.trim().length === 0) { showCustomModal("오류", "유효한 게임 코드를 입력해주세요.", [{ text: "확인", class: "bg-red-600" }]); return; }
-        gameId = id.trim().toUpperCase();
+    if (!id || id.trim().length === 0) { showCustomModal("오류", "유효한 게임 코드를 입력해주세요.", [{ text: "확인", class: "bg-red-600" }]); return; }
+    gameId = id.trim().toUpperCase();
 
-        if (!isNewGame) {
-            const docSnap = await getDoc(doc(db, "games", gameId));
-            if (!docSnap.exists()) { showCustomModal("참가 실패", "존재하지 않는 게임 코드입니다.", [{ text: "확인", class: "bg-red-600" }]); gameId = null; return; }
-        }
-
-        localStorage.setItem('currentGameId', gameId);
-        lobbyModal.classList.add('hidden');
-        gameIdDisplay.value = gameId;
-        // gameIdContainer.classList.remove('hidden'); // REMOVED: Game ID container is removed from this flow
-
-        if (isNewGame) {
-            await deleteLogsCollection(gameId);
-            await seedInitialSettings(gameId);
-            await seedInitialCharacters(gameId);
-            // NEW: Seed initial board tiles (all normal)
-            await setDoc(doc(db, 'games', gameId, 'board', 'tiles'), { tiles: {} });
-            await logAction("⚔️ 새로운 게임이 시작되었습니다! 게임 로그가 초기화되었습니다.", "system");
-        }
-        listenForGameData(gameId);
-        openPCLoginModal();
+    if (!isNewGame) {
+        const docSnap = await getDoc(doc(db, "games", gameId));
+        if (!docSnap.exists()) { showCustomModal("참가 실패", "존재하지 않는 게임 코드입니다.", [{ text: "확인", class: "bg-red-600" }]); gameId = null; return; }
     }
+
+    localStorage.setItem('currentGameId', gameId);
+    lobbyModal.classList.add('hidden');
+    gameIdDisplay.value = gameId;
+
+    if (isNewGame) {
+        await deleteLogsCollection(gameId);
+        await seedInitialSettings(gameId);
+        await seedInitialCharacters(gameId);
+        await setDoc(doc(db, 'games', gameId, 'board', 'tiles'), { tiles: {} });
+        await logAction("⚔️ 새로운 게임이 시작되었습니다! 게임 로그가 초기화되었습니다.", "system");
+    }
+    
+    listenForGameData(gameId);
+    listenForCombatTextEvents(gameId); 
+    
+    openPCLoginModal();
+}
     function leaveGame() { localStorage.removeItem('currentGameId', gameId); location.reload(); }
 
     // --- Authentication ---
@@ -1617,6 +1651,47 @@
 
     unsubscribeLogs = onSnapshot(query(collection(db, "games", gameId, "logs"), orderBy("timestamp", "desc")), (snapshot) => {
         renderLogs(snapshot.docs.map(doc => doc.data()));
+    });
+}
+
+async function triggerCombatText(character, text, type) {
+    if (!gameId || !character) return;
+    try {
+        await addDoc(collection(db, "games", gameId, "combatEvents"), {
+            characterId: character.id,
+            text: text,
+            type: type,
+            timestamp: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error triggering combat text:", error);
+    }
+}
+
+function listenForCombatTextEvents(gameId) {
+    if (unsubscribeCombatEvents) unsubscribeCombatEvents();
+
+    const q = query(
+        collection(db, "games", gameId, "combatEvents"),
+        orderBy("timestamp")
+    );
+
+    unsubscribeCombatEvents = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach(async (change) => {
+            if (change.type === "added") {
+                const eventData = change.doc.data();
+                const character = characters.find(c => c.id === eventData.characterId);
+                if (character) {
+                    showCombatText(character, eventData.text, eventData.type);
+                }
+                
+                try {
+                    await deleteDoc(change.doc.ref);
+                } catch (error) {
+                    console.error("Error deleting combat text event:", error);
+                }
+            }
+        });
     });
 }
        const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -1919,6 +1994,26 @@ async function executeSingleEnemyAction(enemyId) {
     await delay(500);
 
     advanceRoundPhase();
+}
+function showCombatText(character, text, type) {
+    if (!character || character.x === null) return;
+
+    const token = document.querySelector(`.character-token[data-char-id="${character.id}"]`);
+    if (!token) return;
+
+    const tokenRect = token.getBoundingClientRect();
+    
+    const textElement = document.createElement('div');
+    textElement.classList.add('combat-text', type);
+    textElement.textContent = text;
+
+    document.body.appendChild(textElement);
+    textElement.style.left = `${tokenRect.left + tokenRect.width / 2}px`;
+    textElement.style.top = `${tokenRect.top}px`;
+
+    setTimeout(() => {
+        textElement.remove();
+    }, 1500);
 }
 
 function renderForeshadowing() {
@@ -2301,7 +2396,7 @@ function isAttackPossible(attacker, target, attackRange) {
     const skill = SKILLS[skillId];
     if (!skill) return;
     
-    await updateMP(attacker, -skill.mpCost);
+    if (skill.mpCost > 0) await updateMP(attacker, -skill.mpCost);
 
     const defenderToken = document.querySelector(`.character-token[data-char-id="${defender.id}"]`);
     if (defenderToken) {
@@ -2351,7 +2446,8 @@ function isAttackPossible(attacker, target, attackRange) {
 
     const finalDamage = Math.max(1, Math.round((finalAttack * skill.multiplier) - finalDefense));
     const newHp = await updateHP(defender, -finalDamage, "damage");
-    
+        await triggerCombatText(defender, `-${finalDamage.toFixed(0)}`, 'damage');
+
     let bonusText = "";
     if (attackBonus > 0) bonusText += `+공격 ${attackBonus.toFixed(0)}`;
     if (defenseBonus > 0) bonusText += (bonusText ? ", " : "") + `-방어 ${defenseBonus.toFixed(0)}`;
@@ -2361,75 +2457,74 @@ function isAttackPossible(attacker, target, attackRange) {
     await logAction(message, "damage");
     
     return true;
+}
+    
+    async function applyHealOrSupport(caster, target, skillId) {
+    const skill = SKILLS[skillId];
+    if (!skill) return false;
+    
+    const isResurrect = skill.targetType === 'ALLY_DEAD';
+    const isHpTransfer = skillId === 'hp_transfer';
+    const isMpTransfer = skillId === 'mp_transfer';
+    
+    if (caster.mp < skill.mpCost || (isHpTransfer && caster.hp <= skill.hpCost)) {
+         const resource = isHpTransfer ? 'HP' : 'MP';
+         const cost = isHpTransfer ? skill.hpCost : skill.mpCost;
+         const current = isHpTransfer ? caster.hp : caster.mp;
+         await logAction(`⚠️ ${caster.name}이(가) ${resource}가 부족하여 ${skill.name}을(를) 시전하지 못했습니다. (필요: ${cost} ${resource}, 현재: ${current} ${resource})`, "system");
+         return false;
     }
     
-    // --- Refactored Apply Heal/Support ---
-    async function applyHealOrSupport(caster, target, skillId) {
-        const skill = SKILLS[skillId];
-        if (!skill) return false;
-        
-        const isResurrect = skillId === 'ALLY_DEAD';
-        const isHpTransfer = skillId === 'hp_transfer';
-        const isMpTransfer = skillId === 'mp_transfer';
-        
-        // MP/HP Cost Check
-        if (caster.mp < skill.mpCost || (isHpTransfer && caster.hp <= skill.hpCost)) {
-             const resource = isHpTransfer ? 'HP' : 'MP';
-             const cost = isHpTransfer ? skill.hpCost : skill.mpCost;
-             const current = isHpTransfer ? caster.hp : caster.mp;
-             await logAction(`⚠️ ${caster.name}이(가) ${resource}가 부족하여 ${skill.name}을(를) 시전하지 못했습니다. (필요: ${cost} ${resource}, 현재: ${current} ${resource})`, "system");
-             return false;
-        }
-        
-        // Consume Resources
-        if (skill.mpCost > 0) await updateMP(caster, -skill.mpCost);
-        if (skill.hpCost > 0) await updateHP(caster, -skill.hpCost, "damage"); // Self-damage for HP transfer
+    if (skill.mpCost > 0) await updateMP(caster, -skill.mpCost);
+    if (skill.hpCost > 0) await updateHP(caster, -skill.hpCost, "damage");
 
-        // Animation Helper
-        const targetToken = document.querySelector(`.character-token[data-char-id="${target.id}"]`);
-        if (targetToken) {
-            const animationClass = isMpTransfer ? 'heal-animation' : 'heal-animation'; 
-            const overlayClass = isMpTransfer ? 'show-heal-overlay' : 'show-heal-overlay';
-            targetToken.classList.add(animationClass, overlayClass);
-            setTimeout(() => {
-                targetToken.classList.remove(animationClass, overlayClass);
-            }, 1000);
-        }
-
-        let message;
-        
-        if (isResurrect) {
-            // Resurrect: Set HP to 30% of maxHP, set MP to 0. Must be placed (x!=null is checked by eligibility).
-            const reviveHp = Math.round(target.maxHp * skill.multiplier);
-            await updateDoc(doc(db, 'games', gameId, 'characters', target.id), { 
-                hp: reviveHp, 
-                mp: 0 
-            });
-            message = `👼 ${caster.name}의 ${skill.name}! **${target.name}**을(를) **${reviveHp} HP, 0 MP**로 부활시켰습니다.`;
-            await logAction(message, "heal");
-        } else if (isHpTransfer) {
-            // HP Transfer (Healing)
-            const healAmount = Math.max(1, Math.round(caster.minAttack * skill.multiplier));
-            const newHp = await updateHP(target, healAmount, "heal");
-            message = `💖 ${caster.name}이(가) **${skill.hpCost} HP**를 소모하여 ${target.name}에게 **${healAmount} HP**를 전달했습니다. (${target.hp} → ${newHp})`;
-            await logAction(message, "heal");
-        } else if (isMpTransfer) {
-            // MP Transfer
-            const mpAmount = skill.multiplier; // Multiplier holds the fixed MP amount (30)
-            const newMp = await updateMP(target, mpAmount);
-            message = `💧 ${caster.name}이(가) **${skill.mpCost} MP**를 소모하여 ${target.name}에게 **${mpAmount} MP**를 전달했습니다. (${target.mp} → ${newMp})`;
-            await logAction(message, "system");
-        } else if (skill.type === 'Heal') {
-             // Standard Heal
-            const baseHeal = Math.floor(Math.random() * (caster.maxAttack - caster.minAttack + 1)) + caster.minAttack;
-            const finalHeal = Math.max(1, Math.round(baseHeal * skill.multiplier));
-            const newHp = await updateHP(target, finalHeal, "heal");
-            message = `✨ ${caster.name}의 ${skill.name}! ${target.name}의 **HP를 ${finalHeal.toFixed(0)} 회복!** (${target.hp} → ${newHp})`;
-            await logAction(message, "heal");
-        }
-        
-        return true;
+    const targetToken = document.querySelector(`.character-token[data-char-id="${target.id}"]`);
+    if (targetToken) {
+        const animationClass = isMpTransfer ? 'heal-animation' : 'heal-animation'; 
+        const overlayClass = 'show-heal-overlay';
+        targetToken.classList.add(animationClass, overlayClass);
+        setTimeout(() => {
+            targetToken.classList.remove(animationClass, overlayClass);
+        }, 1000);
     }
+
+    let message;
+    
+    if (isResurrect) {
+        const reviveHp = Math.round(target.maxHp * skill.multiplier);
+        await updateDoc(doc(db, 'games', gameId, 'characters', target.id), { hp: reviveHp, mp: 0 });
+        message = `👼 ${caster.name}의 ${skill.name}! **${target.name}**을(를) **${reviveHp} HP, 0 MP**로 부활시켰습니다.`;
+        
+        await triggerCombatText(target, `+${reviveHp}`, 'heal');
+        
+        await logAction(message, "heal");
+    } else if (isHpTransfer) {
+        const healAmount = Math.max(1, Math.round(caster.minAttack * skill.multiplier));
+        const newHp = await updateHP(target, healAmount, "heal");
+        message = `💖 ${caster.name}이(가) **${skill.hpCost} HP**를 소모하여 ${target.name}에게 **${healAmount} HP**를 전달했습니다. (${target.hp} → ${newHp})`;
+        
+        await triggerCombatText(target, `+${healAmount}`, 'heal');
+        await triggerCombatText(caster, `-${skill.hpCost}`, 'damage');
+
+        await logAction(message, "heal");
+    } else if (isMpTransfer) {
+        const mpAmount = skill.multiplier;
+        const newMp = await updateMP(target, mpAmount);
+        message = `💧 ${caster.name}이(가) **${skill.mpCost} MP**를 소모하여 ${target.name}에게 **${mpAmount} MP**를 전달했습니다. (${target.mp} → ${newMp})`;
+        await logAction(message, "system");
+    } else if (skill.type === 'Heal') {
+        const baseHeal = Math.floor(Math.random() * (caster.maxAttack - caster.minAttack + 1)) + caster.minAttack;
+        const finalHeal = Math.max(1, Math.round(baseHeal * skill.multiplier));
+        const newHp = await updateHP(target, finalHeal, "heal");
+        message = `✨ ${caster.name}의 ${skill.name}! ${target.name}의 **HP를 ${finalHeal.toFixed(0)} 회복!** (${target.hp} → ${newHp})`;
+
+        await triggerCombatText(target, `+${finalHeal.toFixed(0)}`, 'heal');
+
+        await logAction(message, "heal");
+    }
+    
+    return true;
+}
 
 async function applyStatusEffect(target, effectInfo) {
     if (!target || !effectInfo || !effectInfo.id || !PREDEFINED_EFFECTS[effectInfo.id]) return;
