@@ -1104,11 +1104,16 @@
                      <p class="text-sm" style="color: var(--text-tertiary);">캐릭터를 선택하면 스킬이 표시됩니다.</p>
                 </div>
                 <div id="character-list" class="mt-4 flex-grow">
-                    <h2 class="text-lg font-bold pb-2 mb-2 font-title" style="color: var(--text-secondary); border-bottom: 1px solid var(--border-secondary);">캐릭터 상태</h2>
-                    <div id="char-list-content" class="max-h-96 overflow-y-auto space-y-2">
-                        <p style="color: var(--text-tertiary);" class="text-sm">게임에 참여해주세요...</p>
-                    </div>
-                </div>
+    <div id="char-list-header" class="flex justify-between items-center pb-2 mb-2 border-b border-border-secondary cursor-pointer lg:cursor-default">
+        <h2 class="text-lg font-bold font-title" style="color: var(--text-secondary);">캐릭터 상태</h2>
+        <svg id="char-list-toggle-icon" class="w-5 h-5 transition-transform lg:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+    </div>
+    <div id="char-list-content" class="max-h-96 overflow-y-auto space-y-2 hidden lg:block">
+        <p style="color: var(--text-tertiary);" class="text-sm">게임에 참여해주세요...</p>
+    </div>
+</div>
             </div>
             <div class="mt-auto pt-4">
                 <button id="leave-game-btn" class="w-full bg-red-600 font-bold py-2 px-4">게임 나가기</button>
@@ -4898,6 +4903,28 @@ function initializeTouchDragAndDrop() {
 }
 
 initializeTouchDragAndDrop();
+    const charListHeader = document.getElementById('char-list-header');
+    const charListContent = document.getElementById('char-list-content');
+    const charListToggleIcon = document.getElementById('char-list-toggle-icon');
+
+    if (charListHeader && charListContent && charListToggleIcon) {
+        charListHeader.addEventListener('click', () => {
+            if (window.innerWidth >= 1024) {
+                return;
+            }
+            
+            charListContent.classList.toggle('hidden');
+            
+            charListToggleIcon.classList.toggle('rotate-180');
+        });
+    }
+
+    if (window.innerWidth < 1024) {
+        charListContent.classList.add('hidden');
+        charListToggleIcon.classList.remove('rotate-180');
+    } else {
+        charListContent.classList.remove('hidden');
+    }
 </script>
 </body>
 </html>
