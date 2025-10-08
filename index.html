@@ -622,19 +622,20 @@
         #game-log-list .log-admin-move::before { color: var(--log-admin); }
 
         .profile-modal-container { 
-            background: url('https://www.transparenttextures.com/patterns/dark-matter.png'), linear-gradient(to bottom right, #1a1a1a, #111111); 
-            color: var(--text-primary); 
-            border: 1px solid var(--accent-primary); 
-            box-shadow: 0 0 30px rgba(212, 183, 131, 0.3); 
-            display: grid; 
-            grid-template-columns: 350px 1fr;
-            width: 100%; 
-            max-width: 900px; 
-            /* height: 600px; Remove fixed height */
-            max-height: 90vh; /* Set max height relative to viewport */
-            overflow: hidden; 
-            position: relative; 
-        }
+    background: url('https://www.transparenttextures.com/patterns/dark-matter.png'), linear-gradient(to bottom right, #1a1a1a, #111111); 
+    color: var(--text-primary); 
+    border: 1px solid var(--accent-primary); 
+    box-shadow: 0 0 30px rgba(212, 183, 131, 0.3); 
+    display: grid; 
+    grid-template-columns: 350px 1fr;
+    width: 100%; 
+    max-width: 900px; 
+        height: 650px; 
+    max-height: 90vh;
+    overflow: hidden; 
+    
+    position: relative; 
+}
         .profile-modal-container.enemy-profile { border-color: #ef4444; box-shadow: 0 0 30px rgba(239, 68, 68, 0.3); }
         .profile-modal-container.enemy-profile .profile-char-name, 
         .profile-modal-container.enemy-profile .stat-item svg, 
@@ -649,13 +650,13 @@
             background-position: center 20%; 
         }
         .profile-stats-panel { 
-            padding: 2.5rem;
-            background-color: rgba(0,0,0,0.1); 
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            overflow: hidden;
-        }
+    padding: 2.5rem;
+    background-color: rgba(0,0,0,0.1); 
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+        overflow-y: auto; 
+}
         .profile-char-name { font-size: 2.5rem; font-weight: bold; color: var(--accent-primary); margin-bottom: 0.5rem; }
         .profile-char-type { font-size: 1rem; color: var(--text-secondary); margin-bottom: 2rem; flex-shrink: 0; }
         .profile-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; flex-shrink: 0; }
@@ -954,9 +955,16 @@
         stroke-dashoffset: -12;
     }
 }
+.cell.drag-over {
+    background-color: rgba(212, 183, 131, 0.3) !important;
+    outline: 2px solid var(--accent-primary);
+    outline-offset: -2px;
+}
     </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen p-4 overflow-x-hidden pt-60">
+    <div id="drag-ghost" class="hidden absolute rounded-full z-[100] pointer-events-none w-16 h-16 border-2 border-dashed border-yellow-400 bg-black/30 backdrop-blur-sm"></div>
+    <div id="turn-announcement-backdrop"></div> <div id="turn-announcement"></div>
 
     <!-- NEW: Utility Control Group (Bottom Right) -->
     <div id="turn-announcement-backdrop"></div> <div id="turn-announcement"></div>
@@ -4685,36 +4693,44 @@ async function handleCombatClick(e) {
 
     gameBoard.addEventListener('click', gameBoardClick);
     gameBoard.addEventListener('dragover', e => e.preventDefault());
-    gameBoard.addEventListener('drop', async e => {
-    e.preventDefault(); if(!gameId) return;
-    const charId = e.dataTransfer.getData('text/plain'), cell = e.target.closest('.cell');
-    if (cell && charId) {
-        const targetChar = characters.find(c => c.id === charId);
-        const isPC = targetChar?.type === 'PC';
+    async function handleDropOnCell(charId, cell) {
+    if (!gameId || !cell || !charId) return;
 
-        const canDragAndDrop = (isAdmin && isAdminMoveAllowed) || (isPC && loggedInCharId === charId && roundPhase === 'PLAYER_PHASE' && characters[currentTurnIndex]?.id === charId);
+    const targetChar = characters.find(c => c.id === charId);
+    if (!targetChar) return;
 
-        if (targetChar && canDragAndDrop) { // 드래그 드롭 가능 여부만 체크
-            const newX = parseInt(cell.dataset.x);
-            const newY = parseInt(cell.dataset.y);
+    const canDragAndDrop = (isAdmin && isAdminMoveAllowed) || 
+                           (gameState === 'PREPARATION' && targetChar.type === 'PC' && (isAdmin || loggedInCharId === charId)) ||
+                           (gameState === 'STARTED' && targetChar.type === 'PC' && loggedInCharId === charId && selectedCharacterId === charId);
 
-            if (canPlaceCharacter(targetChar, newX, newY)) {
-                await updateDoc(doc(db, 'games', gameId, 'characters', charId), { x: newX, y: newY });
-                
-                if (targetChar.x === null) {
-                   await logAction(`✅ ${targetChar.name}이(가) 전장에 합류했습니다.`, "join");
-                } else if (isAdmin && isAdminMoveAllowed) { // 관리자 이동 로그
-                   await logAction(`👮 관리자가 ${targetChar.name}을(를) (${targetChar.x},${targetChar.y})에서 (${newX}, ${newY})로 이동했습니다.`, "admin-move");
-                } else { // 일반 유저 이동 로그
-                    await logAction(`🏃 ${targetChar.name}이(가) (${targetChar.x},${targetChar.y})에서 (${newX}, ${newY})로 이동했습니다.`, "move");
-                }
+    if (canDragAndDrop) {
+        const newX = parseInt(cell.dataset.x);
+        const newY = parseInt(cell.dataset.y);
+
+        if (canPlaceCharacter(targetChar, newX, newY)) {
+            const oldX = targetChar.x;
+            await updateDoc(doc(db, 'games', gameId, 'characters', charId), { x: newX, y: newY });
+            
+            if (oldX === null) {
+               await logAction(`✅ ${targetChar.name}이(가) 전장에 합류했습니다.`, "join");
+            } else if (isAdmin && isAdminMoveAllowed) {
+               await logAction(`👮 관리자가 ${targetChar.name}을(를) (${oldX},${targetChar.y})에서 (${newX}, ${newY})로 이동했습니다.`, "admin-move");
             } else {
-                 showCustomModal("배치 오류", "해당 위치는 이미 다른 캐릭터가 차지하고 있거나 장애물입니다.", [{ text: "확인", class: "bg-red-600" }]);
+                await logAction(`🏃 ${targetChar.name}이(가) (${oldX},${targetChar.y})에서 (${newX}, ${newY})로 이동했습니다.`, "move");
             }
-        } else { // 권한이 없는 경우 경고 메시지 표시
-            showCustomModal("권한 부족", "전투 중에는 관리자 또는 자신의 턴인 캐릭터만 이동할 수 있습니다.", [{ text: "확인", class: "bg-red-600" }]);
+        } else {
+             showCustomModal("배치 오류", "해당 위치는 이미 다른 캐릭터가 차지하고 있거나 장애물입니다.", [{ text: "확인", class: "bg-red-600" }]);
         }
+    } else {
+        showCustomModal("권한 부족", "캐릭터를 배치하거나 이동할 권한이 없습니다.", [{ text: "확인", class: "bg-red-600" }]);
     }
+}
+
+gameBoard.addEventListener('drop', async e => {
+    e.preventDefault();
+    const charId = e.dataTransfer.getData('text/plain');
+    const cell = e.target.closest('.cell');
+    await handleDropOnCell(charId, cell);
 });
  async function saveSettingsToFile() {
         if (!gameId) return;
@@ -4820,6 +4836,68 @@ async function handleCombatClick(e) {
         applyTheme(newTheme);
     });
     applyTheme(localStorage.getItem('theme') || 'dark');
+
+function initializeTouchDragAndDrop() {
+    const selectionOverlay = document.getElementById('character-selection-overlay');
+    const ghost = document.getElementById('drag-ghost');
+    let draggedCharId = null;
+    let lastOverCell = null;
+
+    const onTouchMove = (e) => {
+        if (!draggedCharId) return;
+        
+        const touch = e.touches[0];
+        ghost.style.left = `${touch.clientX - ghost.offsetWidth / 2}px`;
+        ghost.style.top = `${touch.clientY - ghost.offsetHeight / 2}px`;
+
+        const elementUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+        const currentOverCell = elementUnder ? elementUnder.closest('.cell') : null;
+
+        if (currentOverCell !== lastOverCell) {
+            if (lastOverCell) {
+                lastOverCell.classList.remove('drag-over');
+            }
+            if (currentOverCell) {
+                currentOverCell.classList.add('drag-over');
+            }
+            lastOverCell = currentOverCell;
+        }
+    };
+
+    const onTouchEnd = async (e) => {
+        if (!draggedCharId) return;
+
+        if (lastOverCell) {
+            lastOverCell.classList.remove('drag-over');
+            await handleDropOnCell(draggedCharId, lastOverCell);
+        }
+
+        ghost.classList.add('hidden');
+        draggedCharId = null;
+        lastOverCell = null;
+        document.removeEventListener('touchmove', onTouchMove);
+        document.removeEventListener('touchend', onTouchEnd);
+    };
+
+    selectionOverlay.addEventListener('touchstart', (e) => {
+        const card = e.target.closest('.char-card-item[draggable="true"]');
+        if (!card) return;
+        
+        e.preventDefault();
+        
+        draggedCharId = card.dataset.charId;
+        const touch = e.touches[0];
+
+        ghost.style.left = `${touch.clientX - ghost.offsetWidth / 2}px`;
+        ghost.style.top = `${touch.clientY - ghost.offsetHeight / 2}px`;
+        ghost.classList.remove('hidden');
+
+        document.addEventListener('touchmove', onTouchMove);
+        document.addEventListener('touchend', onTouchEnd);
+    }, { passive: false });
+}
+
+initializeTouchDragAndDrop();
 </script>
 </body>
 </html>
