@@ -999,8 +999,11 @@
 
     <!-- NEW: Utility Control Group (Bottom Right) -->
     <div id="turn-announcement-backdrop"></div> <div id="turn-announcement"></div>
-    <div id="utility-controls">
-        <button id="user-info-btn" class="info-button p-3 rounded-full transition-transform hover:scale-110">
+<div id="utility-controls">
+    <button id="login-status-btn" class="info-button p-3 rounded-full transition-transform hover:scale-110 hidden">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.653-.122-1.28-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.653.122-1.28.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+    </button>
+    <button id="user-info-btn" class="info-button p-3 rounded-full transition-transform hover:scale-110">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </button>
         <button id="theme-toggle-btn" class="info-button p-3 rounded-full transition-transform hover:scale-110">
@@ -1010,9 +1013,16 @@
         <button id="admin-panel-btn" class="text-white font-bold p-3 rounded-full shadow-lg z-50 transition-transform hover:scale-110" style="background-color: var(--accent-primary); color: var(--bg-primary) !important;">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         </button>
-    </div>
+</div>
 
-    <!-- User Info Modal -->
+<div id="login-status-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center p-4 z-[80] hidden">
+    <div class="modal-content rounded-md shadow-2xl p-8 w-full max-w-md">
+        <h3 class="text-2xl font-bold mb-4 font-title" style="color: var(--accent-primary);">플레이어 접속 현황</h3>
+        <ul id="login-status-list-modal" class="space-y-2 text-sm max-h-60 overflow-y-auto pr-2">
+            </ul>
+        <button id="close-login-status-modal-btn" class="w-full mt-6 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2">닫기</button>
+    </div>
+</div>
     <div id="user-info-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center p-4 z-[80] hidden">
         <div class="modal-content rounded-md shadow-2xl p-8 w-full max-w-md">
             <h3 class="text-2xl font-bold mb-4 font-title" style="color: var(--accent-primary);">내 정보 및 게임 코드</h3>
@@ -1089,13 +1099,12 @@
     <!-- Main Content Area -->
     <div class="w-full max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
         <!-- Left: Control Panel -->
-        <div class="panel lg:w-1/4 w-full p-6 shadow-lg flex flex-col">
+         <div class="panel lg:w-1/4 w-full p-6 shadow-lg flex flex-col">
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <h1 class="text-xl font-bold font-title" style="color: var(--accent-primary);">게임 상태</h1>
                 </div>
                 
-                <!-- UPDATED: Remaining Units Summary (Applied Stylish Box, now transparent) -->
                 <div id="unit-summary" class="mb-4">
                     <div id="remaining-pc" class="text-center">
                         <p class="text-xs text-gray-400">남은 아군</p>
@@ -1107,8 +1116,7 @@
                     </div>
                 </div>
 
-                <!-- Game ID Display (REMOVED from UI flow) -->
-                 <div id="game-id-container" class="hidden">
+                <div id="game-id-container" class="hidden">
                     <p class="text-xs font-semibold" style="color: var(--text-secondary);">게임 코드:</p>
                     <div class="flex items-center gap-2 mt-1">
                         <input readonly id="game-id-display" class="form-input text-center text-sm p-1" style="background-color: var(--bg-game-id);">
@@ -1117,15 +1125,12 @@
                         </button>
                     </div>
                 </div>
-                <!-- Auth Status (Hidden, moved to User Info Modal) -->
                 <div id="auth-status" class="hidden">
                     <p class="font-semibold text-gray-400">현재 인증:</p>
                     <span id="current-auth-char" class="text-yellow-400 font-bold">비로그인</span>
                     <button id="login-btn" class="text-xs ml-2 text-indigo-500 hover:text-indigo-300 hidden">로그인</button>
                     <button id="logout-btn" class="text-xs ml-2 text-red-500 hover:text-red-300 hidden">로그아웃</button>
                 </div>
-                <!-- End Hidden Elements -->
-
                 <div id="turn-status" class="mb-4 stylish-turn-box" >
                     <p class="text-sm font-semibold" style="color: var(--accent-primary);">현재 턴:</p>
                     <div id="current-turn-char" class="text-xl font-bold font-title" style="color: var(--accent-secondary);">준비 중...</div>
@@ -1135,20 +1140,21 @@
                      <p class="text-sm" style="color: var(--text-tertiary);">캐릭터를 선택하면 스킬이 표시됩니다.</p>
                 </div>
                 <div id="character-list" class="mt-4 flex-grow">
-    <div id="char-list-header" class="flex justify-between items-center pb-2 mb-2 border-b border-border-secondary cursor-pointer lg:cursor-default">
-        <h2 class="text-lg font-bold font-title" style="color: var(--text-secondary);">캐릭터 상태</h2>
-        <svg id="char-list-toggle-icon" class="w-5 h-5 transition-transform lg:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
-    </div>
-    <div id="char-list-content" class="max-h-96 overflow-y-auto space-y-2 hidden lg:block">
-        <p style="color: var(--text-tertiary);" class="text-sm">게임에 참여해주세요...</p>
-    </div>
-</div>
-            </div>
-            <div class="mt-auto pt-4">
-                <button id="leave-game-btn" class="w-full bg-red-600 font-bold py-2 px-4">게임 나가기</button>
-            </div>
+					<div id="char-list-header" class="flex justify-between items-center pb-2 mb-2 border-b border-border-secondary cursor-pointer lg:cursor-default">
+						<h2 class="text-lg font-bold font-title" style="color: var(--text-secondary);">캐릭터 상태</h2>
+						<svg id="char-list-toggle-icon" class="w-5 h-5 transition-transform lg:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+						</svg>
+					</div>
+					<div id="char-list-content" class="max-h-96 overflow-y-auto space-y-2 hidden lg:block">
+						<p style="color: var(--text-tertiary);" class="text-sm">게임에 참여해주세요...</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="mt-auto pt-4">
+				<button id="leave-game-btn" class="w-full bg-red-600 font-bold py-2 px-4">게임 나가기</button>
+			</div>
         </div>
 
         <!-- Center: Game Board -->
@@ -1346,6 +1352,8 @@ const combatTextStartTime = new Date();
     const mapEditModal = document.getElementById('map-edit-modal'); // NEW map edit modal
     const userInfoBtn = document.getElementById('user-info-btn');
     const userInfoModal = document.getElementById('user-info-modal');
+    const loginStatusBtn = document.getElementById('login-status-btn');
+const loginStatusModal = document.getElementById('login-status-modal');
 
 
     // --- Game Lobby ---
@@ -1424,39 +1432,33 @@ const combatTextStartTime = new Date();
         }); 
     }
     async function seedInitialCharacters(gameId) {
-        const charCollectionRef = collection(db, "games", gameId, "characters");
-        const snapshot = await getDocs(charCollectionRef);
-        if (snapshot.empty) {
-            const batch = writeBatch(db);
-            const pcData = [ 
-                { name: "User1", img: "", type: 'PC', size: 1, skills: ['slash', 'shoot', 'heal', 'hp_transfer'], statusEffects: [
-        // { id: 'defenseUp', name: '결계 강화', turnsRemaining: 2, value: 1.5 },
-        // { id: 'rooted', name: '속박의 사슬', turnsRemaining: 1 }
-    ], order: 1 }, // Added hp_transfer
-                { name: "User2", img: "", type: 'PC', size: 1, skills: ['crosscut', 'resurrect', 'mp_transfer'], statusEffects: [
-        // { id: 'defenseUp', name: '결계 강화', turnsRemaining: 2, value: 1.5 },
-        // { id: 'rooted', name: '속박의 사슬', turnsRemaining: 1 }
-    ], order: 3 }, // Added resurrect, mp_transfer
-            ];
-            const enemyData = [ 
-                { name: "Enemy1", img: "", type: 'ENEMY', size: 1, skills: ['slash'], statusEffects: [
-        // { id: 'defenseUp', name: '결계 강화', turnsRemaining: 2, value: 1.5 },
-        // { id: 'rooted', name: '속박의 사슬', turnsRemaining: 1 }
-    ], order: 2 }, 
-                { name: "Enemy2", img: "", type: 'ENEMY', size: 2, skills: ['stomp'], statusEffects: [
-        // { id: 'defenseUp', name: '결계 강화', turnsRemaining: 2, value: 1.5 },
-        // { id: 'rooted', name: '속박의 사슬', turnsRemaining: 1 }
-    ], order: 4 }, 
-            ];
-            [...pcData, ...enemyData].forEach(char => {
-                const charPassword = char.type === 'PC' ? DEFAULT_PC_PASSWORD : ''; 
-                // ADDED MP stats
-                const newChar = { name: char.name, imageUrl: char.img || '', type: char.type, size: char.size, hp: 100, maxHp: 100, mp: 50, maxMp: 50, minAttack: 12, maxAttack: 18, minDefense: 3, maxDefense: 7, x: null, y: null, skills: char.skills || [], turnOrder: char.order, password: charPassword, isAuto: false, statusEffects: [] };
-                batch.set(doc(charCollectionRef), newChar);
-            });
-            await batch.commit();
-        }
+    const charCollectionRef = collection(db, "games", gameId, "characters");
+    const snapshot = await getDocs(charCollectionRef);
+    if (snapshot.empty) {
+        const batch = writeBatch(db);
+        const pcData = [ 
+            { name: "User1", img: "", type: 'PC', size: 1, skills: ['slash', 'shoot', 'heal', 'hp_transfer'], order: 1 },
+            { name: "User2", img: "", type: 'PC', size: 1, skills: ['crosscut', 'resurrect', 'mp_transfer'], order: 3 },
+        ];
+        const enemyData = [ 
+            { name: "Enemy1", img: "", type: 'ENEMY', size: 1, skills: ['slash'], order: 2 }, 
+            { name: "Enemy2", img: "", type: 'ENEMY', size: 2, skills: ['stomp'], order: 4 }, 
+        ];
+        [...pcData, ...enemyData].forEach(char => {
+            const charPassword = char.type === 'PC' ? DEFAULT_PC_PASSWORD : ''; 
+            const newChar = { 
+                name: char.name, imageUrl: char.img || '', type: char.type, size: char.size, 
+                hp: 100, maxHp: 100, mp: 50, maxMp: 50, 
+                minAttack: 12, maxAttack: 18, minDefense: 3, maxDefense: 7, 
+                x: null, y: null, skills: char.skills || [], turnOrder: char.order, 
+                password: charPassword, isAuto: false, statusEffects: [],
+                isLoggedIn: false // [추가] 로그인 상태 필드 추가
+            };
+            batch.set(doc(charCollectionRef), newChar);
+        });
+        await batch.commit();
     }
+}
     
     // --- Data Listeners ---
     function listenForGameData(gameId) {
@@ -2732,23 +2734,40 @@ async function applyStatusEffect(target, effectInfo) {
     }
 
     async function handlePCLogin() {
-        const charId = document.getElementById('char-login-name-select').value;
-        const password = document.getElementById('char-login-password-input').value;
-        const errorP = document.getElementById('char-login-error');
-        const targetChar = characters.find(c => c.id === charId);
+    const charId = document.getElementById('char-login-name-select').value;
+    const password = document.getElementById('char-login-password-input').value;
+    const errorP = document.getElementById('char-login-error');
+    const targetChar = characters.find(c => c.id === charId);
 
-        errorP.textContent = '';
+    errorP.textContent = '';
 
-        if (targetChar && targetChar.password === password) {
-            loggedInCharId = charId;
-            isAdmin = false;
-            closeModal('pc-login-modal');
-            updateAuthStatus();
-            showCustomModal("로그인 성공", `${targetChar.name}로 로그인했습니다.`, [{text:"확인", class:"bg-green-600"}]);
-        } else {
-            errorP.textContent = '비밀번호가 올바르지 않습니다.';
-        }
+    if (targetChar && targetChar.password === password) {
+        loggedInCharId = charId;
+        isAdmin = false;
+
+        await updateDoc(doc(db, 'games', gameId, 'characters', charId), { isLoggedIn: true });
+        
+        closeModal('pc-login-modal');
+        updateAuthStatus();
+        showCustomModal("로그인 성공", `${targetChar.name}로 로그인했습니다.`, [{text:"확인", class:"bg-green-600"}]);
+    } else {
+        errorP.textContent = '비밀번호가 올바르지 않습니다.';
     }
+}
+
+async function handleLogout() {
+    if (loggedInCharId) {
+        await updateDoc(doc(db, 'games', gameId, 'characters', loggedInCharId), { isLoggedIn: false });
+    }
+
+    loggedInCharId = null;
+    isAdmin = false;
+    isMapEditMode = false;
+    updateAuthStatus();
+    closeModal('user-info-modal');
+    render();
+    closeModal('map-edit-modal');
+}
     
     // Function to update all status indicators
     function updateAuthStatus() {
@@ -2791,15 +2810,6 @@ async function applyStatusEffect(target, effectInfo) {
         userInfoLogoutBtn.onclick = handleLogout;
     }
     
-    function handleLogout() {
-        loggedInCharId = null;
-        isAdmin = false;
-        isMapEditMode = false;
-        updateAuthStatus();
-        closeModal('user-info-modal'); // Close info modal after logout
-        render();
-        closeModal('map-edit-modal');
-    }
     // --- End PC Login Handlers ---
 
     function initializeBoard() {
@@ -3402,6 +3412,33 @@ function renderSkillButtons(selectedChar) {
         if (cell) cell.classList.add('threat-range-foreshadow');
     });
 }
+function renderLoginStatus() {
+    const list = document.getElementById('login-status-list-modal'); 
+    if (!loginStatusBtn || !list) return; 
+
+    if (!isAdmin) {
+        loginStatusBtn.classList.add('hidden');
+        return;
+    }
+
+    loginStatusBtn.classList.remove('hidden'); 
+
+    const pcs = characters.filter(c => c.type === 'PC');
+    if (pcs.length === 0) {
+        list.innerHTML = `<li class="text-gray-500">플레이어 캐릭터가 없습니다.</li>`;
+        return;
+    }
+
+    list.innerHTML = pcs.map(pc => {
+        const statusIcon = pc.isLoggedIn ? '🟢' : '🔴';
+        const statusText = pc.isLoggedIn ? '온라인' : '오프라인';
+        const textColor = pc.isLoggedIn ? 'text-green-400' : 'text-gray-500';
+        return `<li class="flex justify-between items-center p-2 rounded hover:bg-gray-700/50">
+                    <span>${pc.name}</span>
+                    <span class="${textColor} font-semibold">${statusIcon} ${statusText}</span>
+                </li>`;
+    }).join('');
+}
    function render() {
     if (!isBoardInitialized) initializeBoard();
 
@@ -3564,6 +3601,7 @@ function renderSkillButtons(selectedChar) {
         };
     }
     updateCharacterList();
+    renderLoginStatus();
     renderCharacterSelectionOverlay();
     renderForeshadowing();
 }
@@ -4679,6 +4717,21 @@ async function handleCombatClick(e) {
     
     // --- Map Edit Modal Listeners ---
     document.querySelectorAll('.tile-select-btn').forEach(btn => {
+        loginStatusBtn.addEventListener('click', () => {
+    loginStatusModal.classList.remove('hidden');
+});
+
+document.getElementById('close-login-status-modal-btn').onclick = () => {
+    closeModal('login-status-modal');
+};
+
+loginStatusModal.addEventListener('click', (e) => {
+    if (e.target.id === 'login-status-modal') {
+        closeModal('login-status-modal');
+    }
+});
+
+createGameBtn.addEventListener('click', createGame);
         btn.onclick = (e) => {
             currentTileType = e.currentTarget.dataset.tileType;
             document.getElementById('map-edit-status').textContent = `현재 선택: ${e.currentTarget.textContent.trim()}`;
@@ -4783,6 +4836,7 @@ async function handleCombatClick(e) {
                 input.value = '';
                 errorP.textContent = '';
                 updateAuthStatus();
+                    render();
                 await logAction("👑 관리자가 로그인했습니다.", "system");
             } else {
                 errorP.textContent = '비밀번호가 올바르지 않습니다.';
@@ -5020,6 +5074,11 @@ initializeTouchDragAndDrop();
     } else {
         charListContent.classList.remove('hidden');
     }
+window.addEventListener('beforeunload', async (event) => {
+    if (loggedInCharId) {
+        await updateDoc(doc(db, 'games', gameId, 'characters', loggedInCharId), { isLoggedIn: false });
+    }
+});
 </script>
 </body>
 </html>
