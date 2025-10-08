@@ -3298,6 +3298,36 @@ function renderSkillButtons(selectedChar) {
             if (loggedInCharId === charId) handleLogout();
         }
     }
+    async function copyCharacter(charToCopy) {
+    if (!gameId || !isAdmin) {
+        showCustomModal("권한 오류", "캐릭터 복사는 관리자만 가능합니다.", [{ text: "확인", class: "bg-red-600" }]);
+        return;
+    }
+
+    const { id, ...charData } = charToCopy;
+    
+    const newCharData = {
+        ...charData,
+        name: `${charToCopy.name} (복사본)`,
+        x: null,
+        y: null,
+        isLoggedIn: false, 
+        hasActedThisRound: false, 
+        nextAction: null 
+    };
+    
+    try {
+        await addDoc(collection(db, "games", gameId, "characters"), newCharData);
+        
+        await logAction(`✨ 관리자가 '${charToCopy.name}' 캐릭터를 복사했습니다.`, "admin");
+        closeModal('profile-modal'); // 현재 프로필 창 닫기
+        showCustomModal("복사 완료", `'${newCharData.name}' 캐릭터가 생성되었습니다.`, [{ text: "확인", class: "bg-green-600" }]);
+    } catch (error) {
+        console.error("캐릭터 복사 실패:", error);
+        showCustomModal("오류", "캐릭터를 복사하는 중 오류가 발생했습니다.", [{ text: "확인", class: "bg-red-600" }]);
+    }
+}
+
     
     async function deleteSkill(skillId, skillName) {
         if (!gameId || !isAdmin) return;
@@ -3792,8 +3822,13 @@ function renderLoginStatus() {
                     </div>
                    <div class="mt-auto pt-4 flex-shrink-0 space-y-3">
                        <button id="edit-char-btn" class="w-full bg-gray-600 hover:bg-gray-700 font-bold py-3 px-4">캐릭터 수정</button>
-                       ${(character.x !== null && canUnplace) ? `<button id="unplace-char-btn" class="w-full bg-red-700 hover:bg-red-600 font-bold py-3 px-4">보드에서 배치 해제</button>` : ''}
-                       ${isAdmin ? `<button id="delete-char-btn" class="w-full bg-red-900 hover:bg-red-800 font-bold py-3 px-4"> 캐릭터 영구 삭제</button>` : ''}
+                       ${(character.x !== null && canUnplace) ? `<button id="unplace-char-btn" class="w-full bg-yellow-700 hover:bg-yellow-600 font-bold py-3 px-4">보드에서 배치 해제</button>` : ''}
+                       ${isAdmin ? `
+                        <div class="flex gap-2">
+                           <button id="delete-char-btn" class="w-full bg-red-900 hover:bg-red-800 font-bold py-3 px-4">영구 삭제</button>
+                           <button id="copy-char-btn" class="w-full bg-blue-600 hover:bg-blue-700 font-bold py-3 px-4">캐릭터 복사</button>
+                        </div>
+                       ` : ''}
                     </div>
             </div>
         </div>`;
@@ -3834,6 +3869,10 @@ function renderLoginStatus() {
                         ]
                     );
                 };
+            }
+            const copyBtn = document.getElementById('copy-char-btn');
+            if (copyBtn) {
+                copyBtn.onclick = () => copyCharacter(character);
             }
 
         if (isAdmin) {
