@@ -1232,7 +1232,7 @@
     const db = getFirestore(app);
 
     // --- Global Variables ---
-let BOARD_SIZE = 10; 
+    const BOARD_SIZE = 10;
     let characters = [];
     let selectedCharacterId = null;
     let foreshadowingAction = null;
@@ -1379,19 +1379,12 @@ const loginStatusModal = document.getElementById('login-status-modal');
 
     async function createGame() { await joinGame(generateGameId(), true); }
     async function joinGame(id, isNewGame = false) {
-    if (!id || id.trim().length === 0) { 
-        showCustomModal("오류", "유효한 게임 코드를 입력해주세요.", [{ text: "확인", class: "bg-red-600" }]); 
-        return; 
-    }
+    if (!id || id.trim().length === 0) { showCustomModal("오류", "유효한 게임 코드를 입력해주세요.", [{ text: "확인", class: "bg-red-600" }]); return; }
     gameId = id.trim().toUpperCase();
 
     if (!isNewGame) {
         const docSnap = await getDoc(doc(db, "games", gameId));
-        if (!docSnap.exists()) { 
-            showCustomModal("참가 실패", "존재하지 않는 게임 코드입니다.", [{ text: "확인", class: "bg-red-600" }]); 
-            gameId = null; 
-            return; 
-        }
+        if (!docSnap.exists()) { showCustomModal("참가 실패", "존재하지 않는 게임 코드입니다.", [{ text: "확인", class: "bg-red-600" }]); gameId = null; return; }
     }
 
     localStorage.setItem('currentGameId', gameId);
@@ -1406,41 +1399,10 @@ const loginStatusModal = document.getElementById('login-status-modal');
         await logAction("⚔️ 새로운 게임이 시작되었습니다! 게임 로그가 초기화되었습니다.", "system");
     }
     
-    // ✨ 모든 리스너를 여기서 각각 독립적으로 실행합니다.
-    listenForGameData(gameId);       // 게임 설정 감지
-    listenForCharacterData(gameId); // 캐릭터 정보 감지
-    listenForLogData(gameId);         // 게임 로그 감지
-    listenForBoardData(gameId);       // 맵 타일 감지
-    listenForCombatTextEvents(gameId); // 전투 텍스트 감지
+    listenForGameData(gameId);
+    listenForCombatTextEvents(gameId); 
     
     openPCLoginModal();
-}
-function listenForCharacterData(gameId) {
-    if (unsubscribeChars) unsubscribeChars();
-    unsubscribeChars = onSnapshot(query(collection(db, "games", gameId, "characters")), (snapshot) => {
-        characters = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.turnOrder - b.turnOrder);
-        characters.forEach(char => {
-            if (char.mp === undefined || char.maxMp === undefined) {
-                char.mp = char.maxMp = 50;
-            }
-        });
-        if (!pcLoginModal.classList.contains('hidden')) populatePCLoginSelect();
-        render(); // 캐릭터 정보가 바뀌면 화면을 다시 그립니다.
-    });
-}
-
-function listenForLogData(gameId) {
-    if (unsubscribeLogs) unsubscribeLogs();
-    unsubscribeLogs = onSnapshot(query(collection(db, "games", gameId, "logs"), orderBy("timestamp", "desc")), (snapshot) => {
-        renderLogs(snapshot.docs.map(doc => doc.data())); // 로그 정보만 따로 그립니다.
-    });
-}
-
-function listenForBoardData(gameId) {
-    onSnapshot(doc(db, 'games', gameId, 'board', 'tiles'), (tileDoc) => {
-        boardTiles = tileDoc.data()?.tiles || {};
-        render(); // 맵 타일 정보가 바뀌면 화면을 다시 그립니다.
-    });
 }
     function leaveGame() { localStorage.removeItem('currentGameId', gameId); location.reload(); }
 
@@ -1466,10 +1428,7 @@ function listenForBoardData(gameId) {
             maxRounds: 0, 
             isAdminMoveAllowed: true,
             boardBackgroundImage: '', // Default empty background
-            pageBackgroundImage: '',
-        boardSize: 10
-            
-            
+            pageBackgroundImage: ''
         }); 
     }
     async function seedInitialCharacters(gameId) {
@@ -1501,37 +1460,29 @@ function listenForBoardData(gameId) {
     }
 }
     
+    // --- Data Listeners ---
     function listenForGameData(gameId) {
     if (unsubscribeSettings) unsubscribeSettings();
+    if (unsubscribeChars) unsubscribeChars();
+    if (unsubscribeLogs) unsubscribeLogs();
 
-
-    unsubscribeSettings = onSnapshot(doc(db, 'games', gameId), async (docSnap) => {
+    unsubscribeSettings = onSnapshot(doc(db, 'games', gameId), async (docSnap) => { // async 추가
         if (docSnap.exists()) {
             const data = docSnap.data();
-            const oldGameState = gameState;
+            const oldGameState = gameState; // [수정] 이전 gameState를 기억합니다.
             const oldRoundPhase = roundPhase;
-            const oldBoardSize = BOARD_SIZE;
 
-            // --- 게임 설정 관련 상태 업데이트 ---
             SKILLS = data.skills || {};
             gameState = data.gameState || 'PREPARATION';
             roundPhase = data.roundPhase || 'PLAYER_PHASE';
-            BOARD_SIZE = data.boardSize || 10;
-            round = data.round || 1;
-            maxRounds = data.maxRounds || 0;
-            isAdminMoveAllowed = data.isAdminMoveAllowed !== undefined ? data.isAdminMoveAllowed : true;
-            foreshadowingAction = data.foreshadowingAction || null;
-            boardBackgroundImage = data.boardBackgroundImage || '';
-            pageBackgroundImage = data.pageBackgroundImage || '';
-            document.body.style.setProperty('--page-background-image', pageBackgroundImage ? `url('${pageBackgroundImage}')` : 'none');
-            actingEnemyId = data.actingEnemyId || null;
-            // --- 여기까지 ---
 
-            // 보드 크기가 바뀌었을 때 보드를 다시 그리는 로직
-            if (oldBoardSize !== BOARD_SIZE) {
-            isBoardInitialized = false; 
-            initializeBoard();      
-        }
+            if (oldGameState === 'STARTED' && gameState === 'ENDED' && data.gameResult) {
+                showGameSummaryModal(data.gameResult.title, data.gameResult.message);
+            }
+
+            if (oldGameState === 'PREPARATION' && gameState === 'STARTED') {
+                showBannerAnnouncement("FIGHT!", "게임 시작", '2rem', '4rem');
+            }
             round = data.round || 1;
             maxRounds = data.maxRounds || 0;
             isAdminMoveAllowed = data.isAdminMoveAllowed !== undefined ? data.isAdminMoveAllowed : true;
@@ -2397,29 +2348,19 @@ function isAttackPossible(attacker, target, attackRange) {
 
     function findTargetsInAoe(centerX, centerY, range, shape, skillType, attackerType) {
     const affectedCells = new Set();
-    const attacker = characters.find(c => c.x === centerX && c.y === centerY);
-    const attackerSize = attacker ? attacker.size : 1;
-
-    // 광역 범위 계산: 시전 캐릭터가 차지하는 모든 셀을 시작점으로 사용합니다.
-    for (let ax = 0; ax < attackerSize; ax++) {
-        for (let ay = 0; ay < attackerSize; ay++) {
-            const originX = centerX + ax;
-            const originY = centerY + ay;
-            for (let dy = -range; dy <= range; dy++) {
-                for (let dx = -range; dx <= range; dx++) {
-                    let inShape = (shape === 'diamond' && Math.abs(dx) + Math.abs(dy) <= range) || 
-                                  (shape === 'square') || 
-                                  (shape === 'cross' && (dx === 0 || dy === 0));
-                    if (inShape) {
-                        const x = originX + dx;
-                        const y = originY + dy;
-                        if (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) affectedCells.add(`${x},${y}`);
-                    }
-                }
+    for (let dy = -range; dy <= range; dy++) {
+        for (let dx = -range; dx <= range; dx++) {
+            let inShape = (shape === 'diamond' && Math.abs(dx) + Math.abs(dy) <= range) || 
+              (shape === 'square') || 
+              (shape === 'cross' && (dx === 0 || dy === 0)); // 👈 십자 모양 로직 추가
+            if (inShape) {
+                const x = centerX + dx;
+                const y = centerY + dy;
+                if (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) affectedCells.add(`${x},${y}`);
             }
         }
     }
-
+    
     const targets = new Set();
     characters.forEach(char => {
         if (char.x !== null) {
@@ -2428,22 +2369,22 @@ function isAttackPossible(attacker, target, attackRange) {
             
             let isEligible = false;
             
-            // 대상 유형에 따라 유효한지 체크
+            // Standard damage/heal targeting
             if ((skillType === 'Heal' || skillType === 'Support') && isAlly && char.hp > 0) isEligible = true;
             if (skillType !== 'Heal' && skillType !== 'Support' && isEnemy && char.hp > 0) isEligible = true;
             
-            // 부활 스킬인 경우 사망한 아군만 대상으로
+            // Special case for Resurrect
             const skill = SKILLS[selectedSkill];
             if (skill && skill.targetType === 'ALLY_DEAD' && isAlly && char.hp <= 0) isEligible = true;
 
             if (isEligible) {
                 const size = char.size || 1;
-                // 캐릭터가 차지하는 모든 칸(size x size)을 순회하며 겹치는지 확인합니다.
+                // 캐릭터가 차지하는 모든 칸(size x size)을 순회합니다.
                 for (let ex = 0; ex < size; ex++) {
                     for (let ey = 0; ey < size; ey++) {
                         if (affectedCells.has(`${char.x + ex},${char.y + ey}`)) {
                             targets.add(char);
-                            return;
+                            return; // forEach 루프에서 현재 반복을 종료하고 다음 캐릭터로 넘어갑니다.
                         }
                     }
                 }
@@ -2528,6 +2469,7 @@ function isAttackPossible(attacker, target, attackRange) {
     const isHpTransfer = skillId === 'hp_transfer';
     const isMpTransfer = skillId === 'mp_transfer';
     
+    // [수정] MP 또는 HP가 부족할 경우 스킬 사용을 막는 로직 개선
     if (caster.mp < skill.mpCost || (isHpTransfer && caster.hp <= skill.hpCost)) {
          const resource = isHpTransfer ? 'HP' : 'MP';
          const cost = isHpTransfer ? skill.hpCost : skill.mpCost;
@@ -2536,6 +2478,13 @@ function isAttackPossible(attacker, target, attackRange) {
          return false;
     }
     
+    // [수정] 사망한 대상에게 힐/지원 스킬을 사용하는 경우의 로직 추가
+    if (!isResurrect && target.hp <= 0) {
+        await logAction(`⚠️ ${caster.name}은(는) 사망한 ${target.name}에게 ${skill.name}을(를) 사용할 수 없습니다.`, "system");
+        return false;
+    }
+
+    // [수정] MP 및 HP 소모 로직을 한 곳으로 통합
     if (skill.mpCost > 0) await updateMP(caster, -skill.mpCost);
     if (skill.hpCost > 0) await updateHP(caster, -skill.hpCost, "damage");
 
@@ -2681,43 +2630,42 @@ async function applyStatusEffect(target, effectInfo) {
 
     let actionSucceeded = false;
     let affectedTargets = [];
-    
-    // 광역 스킬일 경우, 시전자(attacker)의 위치를 중심으로 대상을 찾습니다.
-    if (skill.isAoe) {
-        // 시전자의 위치(attacker.x, attacker.y)를 중심으로 광역 대상을 찾습니다.
-        const targetsInAoe = findTargetsInAoe(attacker.x, attacker.y, skill.aoeRange, skill.aoeShape, skill.type, attacker.type);
-        for (const aoeTarget of targetsInAoe) {
-            const success = await applyDamage(attacker, aoeTarget, skillId);
-            if (success) {
-                actionSucceeded = true;
-                affectedTargets.push(aoeTarget);
-            }
+
+    if (skill.category === 'Attack') {
+        if (target.type === attacker.type) {
+            await logAction(`⚠️ ${attacker.name}은(는) 아군에게 공격할 수 없습니다.`, "system");
+            return;
         }
-    } else {
-        // 단일 스킬일 경우 (기존 로직 유지)
-        if (skill.category === 'Attack') {
-            if (target.type === attacker.type) {
-                await logAction(`⚠️ ${attacker.name}은(는) 아군에게 공격할 수 없습니다.`, "system");
-                return;
+
+        if (skill.isAoe) {
+            const targetsInAoe = findTargetsInAoe(target.x, target.y, skill.aoeRange, skill.aoeShape, skill.type, attacker.type);
+            for (const aoeTarget of targetsInAoe) {
+                const success = await applyDamage(attacker, aoeTarget, skillId);
+                if (success) {
+                    actionSucceeded = true;
+                    affectedTargets.push(aoeTarget);
+                }
             }
+        } else {
+            // 단일 공격 로직
             const success = await applyDamage(attacker, target, skillId);
             if (success) {
                 actionSucceeded = true;
                 affectedTargets.push(target);
             }
-        } else if (skill.category === 'Heal' || skill.category === 'Support') {
-            if (target.type !== attacker.type) {
-                await logAction(`⚠️ ${attacker.name}은(는) 적군에게 ${skill.name}을(를) 사용할 수 없습니다.`, "system");
-                return;
-            }
-            const success = await applyHealOrSupport(attacker, target, skillId);
-            if (success) {
-                actionSucceeded = true;
-                affectedTargets.push(target);
-            }
-        } else {
-            actionSucceeded = true; // Utility 스킬 등
         }
+    } else if (skill.category === 'Heal' || skill.category === 'Support') {
+        if (target.type !== attacker.type) {
+            await logAction(`⚠️ ${attacker.name}은(는) 적군에게 ${skill.name}을(를) 사용할 수 없습니다.`, "system");
+            return;
+        }
+        const success = await applyHealOrSupport(attacker, target, skillId);
+        if (success) {
+            actionSucceeded = true;
+            affectedTargets.push(target);
+        }
+    } else {
+        actionSucceeded = true; 
     }
     
     if (skill.appliesEffect && affectedTargets.length > 0) {
@@ -2873,23 +2821,19 @@ async function handleLogout() {
     // --- End PC Login Handlers ---
 
     function initializeBoard() {
-    if (isBoardInitialized) return;
-
-    gameBoard.style.gridTemplateColumns = `repeat(${BOARD_SIZE}, minmax(0, 1fr))`;
-    gameBoard.style.gridTemplateRows = `repeat(${BOARD_SIZE}, minmax(0, 1fr))`;
-
-    gameBoard.innerHTML = '';   
-     for (let y = 0; y < BOARD_SIZE; y++) {
-        for (let x = 0; x < BOARD_SIZE; x++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.dataset.x = x;
-            cell.dataset.y = y;
-            gameBoard.appendChild(cell);
+        if (isBoardInitialized) return;
+        gameBoard.innerHTML = '';
+        for (let y = 0; y < BOARD_SIZE; y++) {
+            for (let x = 0; x < BOARD_SIZE; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.x = x;
+                cell.dataset.y = y;
+                gameBoard.appendChild(cell);
+            }
         }
+        isBoardInitialized = true;
     }
-    isBoardInitialized = true;
-}
 
      function highlightRange(char, skillId) {
         document.querySelectorAll('.combat-range').forEach(cell => cell.classList.remove('combat-range', 'attack-range-move', 'attack-range-skill', 'heal-range-skill'));
@@ -3565,10 +3509,11 @@ function renderLoginStatus() {
                 return;
             }
 
-            const token = document.createElement('div');
+             const token = document.createElement('div');
             token.className = 'character-token';
             token.style.width = `${char.size * 100}%`;
             token.style.height = `${char.size * 100}%`;
+                        const isActingPC = (char.id === selectedCharacterId && char.type === 'PC');
             const isMyLargeCharMoving = (char.id === selectedCharacterId && selectedSkill === 'move' && char.size > 1);
             let isTargetingLargeEnemy = false;
             const attacker = characters.find(c => c.id === selectedCharacterId);
@@ -3577,7 +3522,7 @@ function renderLoginStatus() {
                 isTargetingLargeEnemy = true;
             }
 
-            if (isMyLargeCharMoving || isTargetingLargeEnemy) {
+            if (isActingPC || isMyLargeCharMoving || isTargetingLargeEnemy) {
                 token.classList.add('token-click-through');
             }
             if (char.type === 'ENEMY') token.classList.add('enemy-token');
@@ -4134,24 +4079,7 @@ modalHtml += `<div class="mb-8 p-4 border border-gray-700 rounded-md">
                     <button id="save-page-bg-btn" class="bg-indigo-600 p-2 px-4">적용</button>
                 </div>
             </div>
-             <div class="mb-8 p-4 border border-gray-700 rounded-md">
-        <h4 class="font-bold text-lg mb-4 text-yellow-400">맵/지형 및 배경 관리</h4>
-        
-        <div class="mt-4 pt-4 border-t border-gray-700/50">
-            <label for="board-size-input" class="block text-sm font-medium text-gray-300">
-                게임 보드 크기 (예: 5, 15)
-            </label>
-            <div class="flex gap-2 mt-1">
-                <input type="number" id="board-size-input" class="form-input flex-grow" placeholder="정사각형 한 변의 길이" value="${BOARD_SIZE}">
-                <button id="save-board-size-btn" class="bg-indigo-600 p-2 px-4">크기 변경</button>
-            </div>
-            <p class="text-xs text-yellow-400 mt-2">
-              ⚠️ 크기를 변경하면 안전을 위해 모든 캐릭터의 배치가 초기화됩니다.
-            </p>
-        </div>
-    </div>
         </div>`;
-        
 
         const skillsByCategory = Object.values(SKILLS).reduce((acc, s) => {
             const category = s.category || 'Other';
@@ -4225,20 +4153,6 @@ modalHtml += `<div class="mb-8 p-4 border border-gray-700 rounded-md">
             }
             e.target.value = null;
         };
-        document.getElementById('save-board-size-btn').onclick = async () => {
-    const newSizeInput = document.getElementById('board-size-input');
-    const newSize = parseInt(newSizeInput.value);
-
-    if (newSize > 0 && newSize <= 25) {
-        await updateDoc(doc(db, 'games', gameId), { boardSize: newSize });
-        await resetBoardPositions(); 
-        await logAction(`🗺️ 관리자가 보드 크기를 ${newSize}x${newSize}(으)로 변경했습니다.`, "admin");
-        closeModal('admin-modal');
-    } else {
-        showCustomModal("입력 오류", "유효한 크기를 입력해주세요 (예: 5 ~ 25).", [{ text: "확인", class: "bg-red-600" }]);
-    }
-};
-
         
         document.getElementById('close-admin-modal-btn').onclick = () => closeModal('admin-modal');
         document.getElementById('set-prep-phase-btn').onclick = async () => {
