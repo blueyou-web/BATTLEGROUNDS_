@@ -199,7 +199,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:#f7f9fa;color:#0f1419;min-
 .b-composer-input{width:100%;padding:10px 12px;border:1px solid #e6ecf0;border-radius:12px;background:#f7f9fa;font-size:14px;color:#0f1419;outline:none;resize:vertical;line-height:1.6;font-family:'Noto Sans KR',sans-serif;min-height:70px;margin-bottom:8px}
 .b-composer-input:focus{border-color:var(--b-accent);background:#fff}
 .b-composer-input::placeholder{color:#8899a6}
-.block-list{display:flex;flex-direction:column;gap:5px;max-height:320px;overflow-y:auto}
+.block-list{display:flex;flex-direction:column;gap:5px;max-height:205px;overflow-y:auto}
 .block-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:1.5px solid transparent;cursor:pointer;transition:all .15s}
 .block-item:hover{background:#f7f9fa}
 .block-item.active-edit{border-color:var(--b-accent);background:var(--b-accent-light)}
@@ -493,21 +493,6 @@ input[type=range].b-range{accent-color:var(--b-accent)}
           <div class="panel-body"><div class="char-list" id="a-char-list"><div class="no-msg">인물을 추가해 주세요</div></div></div>
         </div>
         <div class="panel">
-          <div class="panel-header"><span class="panel-title">📂 TXT 불러오기</span></div>
-          <div class="panel-body">
-            <div class="import-drop-zone" id="a-drop-zone"
-              ondragover="event.preventDefault();this.classList.add('drag-over')"
-              ondragleave="this.classList.remove('drag-over')"
-              ondrop="event.preventDefault();this.classList.remove('drag-over');aHandleImport(event.dataTransfer.files[0])">
-              <input type="file" accept=".txt" onchange="aHandleImport(this.files[0]);this.value=''" />
-              <div class="import-drop-icon">📄</div>
-              <div class="import-drop-text">TXT 파일 드래그 또는 클릭</div>
-              <div class="import-drop-sub">이름 -A12, 오후 03:55 형식<br>카카오톡 형식도 자동 인식</div>
-            </div>
-            <div class="import-result-banner" id="a-import-banner"></div>
-          </div>
-        </div>
-        <div class="panel">
           <div class="panel-header"><span class="panel-title">대사 추가</span></div>
           <div class="panel-body">
             <div class="type-btns">
@@ -527,8 +512,26 @@ input[type=range].b-range{accent-color:var(--b-accent)}
           </div>
         </div>
       </div>
-      <div class="content-area">
-        <div class="thread-view">
+     <div class="panel">
+          <div class="panel-header"><span class="panel-title">📂 TXT 불러오기</span></div>
+          <div class="panel-body">
+            <div class="import-drop-zone" id="a-drop-zone"
+              ondragover="event.preventDefault();this.classList.add('drag-over')"
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="event.preventDefault();this.classList.remove('drag-over');aHandleImport(event.dataTransfer.files[0])">
+              <input type="file" accept=".txt" onchange="aHandleImport(this.files[0]);this.value=''" />
+              <div class="import-drop-icon">📄</div>
+              <div class="import-drop-text">TXT 파일 드래그 또는 클릭</div>
+              <div class="import-drop-sub">이름 -A12, 오후 03:55 형식<br>카카오톡 형식도 자동 인식</div>
+            </div>
+            <div class="import-result-banner" id="a-import-banner"></div>
+          </div>
+        </div>
+        
+    </div>
+
+    <div class="content-area">
+      <div class="thread-view">
           <div class="thread-title-bar">
             <input class="thread-title-input" id="a-thread-title" placeholder="역극 제목을 입력하세요" />
             <button class="icon-btn" onclick="aClearAll()" style="font-size:15px" title="전체 삭제">🗑</button>
@@ -595,18 +598,6 @@ input[type=range].b-range{accent-color:var(--b-accent)}
         </div>
 
         <!-- TXT IMPORT PANEL B -->
-        <div class="panel">
-          <div class="panel-header"><span class="panel-title">📂 TXT 불러오기</span></div>
-          <div class="panel-body">
-            <div class="import-drop-zone purple" id="b-drop-zone">
-              <input type="file" accept=".txt" onchange="bHandleImport(this.files[0])" />
-              <div class="import-drop-icon">📄</div>
-              <div class="import-drop-text">TXT 파일 드래그 또는 클릭</div>
-              <div class="import-drop-sub">빈 줄로 구분된 단락 / [챕터] 자동 인식</div>
-            </div>
-            <div class="import-result-banner" id="b-import-banner"></div>
-          </div>
-        </div>
         <div class="panel">
         <div class="panel-header"><span class="panel-title">📂 TXT 불러오기</span></div>
         <div class="panel-body">
