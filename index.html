@@ -1,1 +1,2110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>역극 백업소</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@400;600;700&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans KR',sans-serif;background:#f7f9fa;color:#0f1419;min-height:100vh;font-size:14px;line-height:1.6}
 
+/* ── SCREENS ── */
+.screen{display:none}
+.screen.active{display:block}
+#screen-home{display:flex;flex-direction:column;min-height:100vh}
+
+/* ══════════════════════════
+   SHARED HEADER
+══════════════════════════ */
+.site-header{background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid #e6ecf0;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:53px;position:sticky;top:0;z-index:100}
+.site-logo{font-size:16px;font-weight:700;color:#0f1419;display:flex;align-items:center;gap:8px}
+.logo-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px}
+.logo-a{background:#1d9bf0}.logo-b{background:#794bc4}.logo-home{background:#1d9bf0}.logo-c{background:#fee500}
+.back-btn{font-size:13px;color:#8899a6;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:'Noto Sans KR',sans-serif;transition:color .1s;padding:0}
+.back-btn:hover{color:#0f1419}
+.header-tabs{display:flex}
+.tab-btn{border:none;background:transparent;padding:8px 20px;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:500;color:#536471;cursor:pointer;transition:color .15s;position:relative}
+.tab-btn::after{content:'';position:absolute;bottom:-1px;left:20%;right:20%;height:3px;border-radius:2px 2px 0 0;opacity:0;transition:opacity .15s}
+.tab-btn.active{color:#0f1419;font-weight:700}
+.tab-btn.active::after{opacity:1}
+.tab-btn:hover:not(.active){background:#f7f9fa;border-radius:8px;color:#0f1419}
+.tab-a .tab-btn::after{background:#1d9bf0}
+.tab-b .tab-btn::after{background:#794bc4}
+.tab-c .tab-btn::after{background:#3c1e1e}
+.header-right{display:flex;gap:8px}
+
+/* ══════════════════════════
+   BUTTONS
+══════════════════════════ */
+.btn{padding:8px 18px;border-radius:20px;font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:700;cursor:pointer;border:1px solid transparent;transition:all .15s;white-space:nowrap;display:inline-block}
+.btn-blue{background:#1d9bf0;color:#fff}.btn-blue:hover{background:#1a8cd8}
+.btn-purple{background:#794bc4;color:#fff}.btn-purple:hover{background:#6a3db5}
+.btn-dark{background:#0f1419;color:#fff}.btn-dark:hover{background:#2d3748}
+.btn-outline{background:transparent;border-color:#ccd6dd;color:#0f1419;font-weight:500}.btn-outline:hover{background:#f7f9fa}
+.btn-danger{background:transparent;border-color:#c0392b!important;color:#c0392b!important}.btn-danger:hover{background:#fdecea!important}
+.btn-sm{padding:5px 14px;font-size:13px}
+.btn-full{width:100%;text-align:center}
+.icon-btn{width:26px;height:26px;border:none;background:transparent;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#8899a6;transition:all .12s}
+.icon-btn:hover{background:#e6ecf0;color:#0f1419}
+.icon-btn.danger:hover{background:#fdecea;color:#c0392b}
+
+/* ══════════════════════════
+   HOME PAGE
+══════════════════════════ */
+.home-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 16px}
+.home-title{font-family:'Noto Serif KR',serif;font-size:28px;font-weight:700;margin-bottom:8px;text-align:center}
+.home-sub{font-size:14px;color:#536471;margin-bottom:48px;text-align:center}
+.home-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:960px;width:100%}
+@media(max-width:760px){.home-cards{grid-template-columns:1fr 1fr}}@media(max-width:480px){.home-cards{grid-template-columns:1fr}}
+.home-card{background:#fff;border:1.5px solid #e6ecf0;border-radius:20px;padding:32px 28px;cursor:pointer;transition:all .2s;text-align:left}
+.home-card.card-a:hover{border-color:#1d9bf0;box-shadow:0 4px 24px rgba(29,155,240,.1);transform:translateY(-2px)}
+.home-card.card-b:hover{border-color:#794bc4;box-shadow:0 4px 24px rgba(121,75,196,.1);transform:translateY(-2px)}
+.card-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;margin-bottom:16px;letter-spacing:.5px}
+.badge-a{background:#e8f5fd;color:#1d9bf0}.badge-b{background:#f3f0ff;color:#794bc4}
+.card-icon{font-size:36px;margin-bottom:14px}
+.card-title{font-size:18px;font-weight:700;margin-bottom:8px}
+.card-desc{font-size:13px;color:#536471;line-height:1.7}
+.card-preview{margin-top:20px;border-radius:12px;overflow:hidden;border:1px solid #e6ecf0}
+.preview-a-mini{background:#f7f9fa;padding:12px 14px}
+.thread-mini{display:flex;gap:8px;margin-bottom:6px}
+.av-mini{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+.tm-name{font-size:11px;font-weight:700;margin-bottom:1px}
+.tm-text{font-size:11px;color:#536471;line-height:1.5}
+.vline-mini{width:2px;height:8px;background:#cfd9de;margin-left:13px;margin-bottom:2px}
+.preview-b-mini{background:#fffef9;padding:14px 16px;font-family:'Noto Serif KR',serif}
+.pb-title-mini{font-size:12px;font-weight:700;margin-bottom:8px}
+.pb-text-mini{font-size:11px;line-height:1.8;color:#2a2016}
+.home-footer{padding:24px;text-align:center;font-size:12px;color:#8899a6}
+
+/* ══════════════════════════
+   SHARED PANEL/FORM
+══════════════════════════ */
+.main-layout{max-width:980px;margin:0 auto;padding:20px 16px;display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
+@media(max-width:700px){.main-layout{grid-template-columns:1fr}.sidebar{order:2}.content-area{order:1}}
+.sidebar{position:sticky;top:68px}
+.panel{background:#fff;border:1px solid #e6ecf0;border-radius:16px;overflow:hidden;margin-bottom:16px}
+.panel-header{padding:12px 16px;border-bottom:1px solid #e6ecf0;display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-size:15px;font-weight:700;color:#0f1419}
+.panel-body{padding:12px}
+.input-field{width:100%;padding:9px 12px;border:1px solid #e6ecf0;border-radius:20px;background:#f7f9fa;font-family:'Noto Sans KR',sans-serif;font-size:14px;color:#0f1419;outline:none;transition:border-color .15s,background .15s}
+.actions-bar{display:flex;gap:8px;padding:10px 20px;border-top:1px solid #e6ecf0;align-items:center}
+.no-msg{padding:12px 0;text-align:center;color:#8899a6;font-size:13px}
+.help-text{font-size:11px;color:#8899a6;margin-top:4px}
+.empty-state{padding:60px 20px;text-align:center;color:#8899a6}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:.35}
+
+/* ══════════════════════════
+   A TYPE — THREAD
+══════════════════════════ */
+:root{
+  --a-accent:#1d9bf0;--a-accent-light:#e8f5fd;
+  --b-accent:#794bc4;--b-accent-light:#f3f0ff;
+  --thread-line:#cfd9de;
+}
+.a-input-field:focus{border-color:var(--a-accent);background:#fff}
+.b-input-field:focus{border-color:var(--b-accent);background:#fff}
+
+/* char list */
+.char-list{display:flex;flex-direction:column;gap:6px}
+.char-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;border:1.5px solid transparent;cursor:pointer;transition:all .15s}
+.char-item:hover{background:#f7f9fa}
+.char-item.selected{border-color:var(--a-accent);background:var(--a-accent-light)}
+.char-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;overflow:hidden;border:2px solid rgba(0,0,0,.06)}
+.char-avatar img,.thread-av img,.preview-av img{width:100%;height:100%;object-fit:cover}
+.char-name{font-size:14px;font-weight:600;flex:1}
+.char-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.char-item:hover .char-actions,.char-item.selected .char-actions{opacity:1}
+
+/* color palette */
+.color-palette{display:flex;flex-wrap:wrap;gap:6px}
+.color-dot{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s}
+.color-dot:hover{transform:scale(1.15)}
+.color-dot.selected{border-color:#333;transform:scale(1.15)}
+
+/* type btns */
+.type-btns{display:flex;border:1px solid #e6ecf0;border-radius:20px;overflow:hidden;margin-bottom:10px}
+.type-btn{flex:1;padding:7px 0;font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;color:#536471;font-family:'Noto Sans KR',sans-serif;transition:all .1s}
+.type-btn.active{background:#0f1419;color:#fff;font-weight:700}
+
+/* selected char badge */
+.sel-char-badge{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--a-accent-light);border-radius:20px;font-size:13px;color:var(--a-accent);font-weight:600;margin-bottom:8px}
+.mini-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;overflow:hidden;flex-shrink:0}
+.mini-av img{width:100%;height:100%;object-fit:cover}
+
+.msg-textarea{width:100%;min-height:90px;padding:12px 14px;border:1px solid #e6ecf0;border-radius:12px;background:#f7f9fa;font-family:'Noto Sans KR',sans-serif;font-size:14px;color:#0f1419;outline:none;resize:vertical;line-height:1.6;transition:border-color .15s;margin-bottom:8px}
+.msg-textarea:focus{border-color:var(--a-accent);background:#fff}
+.msg-textarea::placeholder{color:#8899a6}
+.sys-msg-input{padding:9px 12px;border:1px dashed #ccd6dd;border-radius:20px;background:transparent;font-family:'Noto Sans KR',sans-serif;font-size:13px;color:#536471;outline:none;width:100%;margin-bottom:8px}
+
+/* thread editor */
+.thread-view{background:#fff;border:1px solid #e6ecf0;border-radius:16px;overflow:hidden}
+.thread-title-bar{padding:14px 20px 12px;border-bottom:1px solid #e6ecf0;display:flex;align-items:center;gap:12px}
+.thread-title-input{flex:1;border:none;background:transparent;font-size:18px;font-weight:700;color:#0f1419;outline:none;font-family:'Noto Sans KR',sans-serif}
+.thread-title-input::placeholder{color:#8899a6}
+.thread-body{padding:16px 0;min-height:200px}
+.thread-msg{display:flex;gap:12px;padding:8px 24px;transition:background .1s}
+.thread-msg:hover{background:rgba(0,0,0,.015)}
+.thread-msg-left{display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0}
+.thread-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;overflow:hidden;border:2px solid rgba(0,0,0,.05)}
+.thread-line{width:2px;flex:1;background:var(--thread-line);margin-top:3px;min-height:10px}
+.thread-msg-right{flex:1;min-width:0}
+.thread-msg-name{font-weight:700;font-size:15px;line-height:40px;height:40px;display:flex;align-items:center;gap:6px}
+.thread-msg-text{font-size:15px;color:#0f1419;line-height:1.7;white-space:pre-wrap;word-break:break-word;padding-bottom:4px}
+.thread-msg-text .action-text{color:#536471;font-style:italic}
+.thread-msg-actions{opacity:0;display:flex;gap:2px;margin-left:auto;flex-shrink:0;transition:opacity .15s}
+.thread-msg:hover .thread-msg-actions{opacity:1}
+.thread-sys-msg{padding:8px 24px;text-align:center;font-size:13px;color:#8899a6;font-style:italic;display:flex;align-items:center;gap:10px;transition:background .1s}
+.thread-sys-msg::before,.thread-sys-msg::after{content:'';flex:1;height:1px;background:#e6ecf0}
+.thread-sys-msg:hover{background:#f7f9fa}
+.sys-actions{display:none;gap:2px;flex-shrink:0}
+.thread-sys-msg:hover .sys-actions{display:flex}
+
+/* img src tabs */
+.img-src-tabs{display:flex;border:1px solid #e6ecf0;border-radius:8px;overflow:hidden;margin-bottom:8px}
+.img-src-tab{flex:1;padding:6px 0;font-size:12px;font-weight:500;border:none;background:transparent;cursor:pointer;color:#536471;font-family:'Noto Sans KR',sans-serif;transition:all .1s}
+.img-src-tab.active{background:#0f1419;color:#fff;font-weight:700}
+.img-preview-wrap{display:flex;align-items:center;gap:10px;margin-top:8px}
+#a-char-img-preview{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #e6ecf0;display:none;flex-shrink:0}
+.url-status{font-size:11px;color:#8899a6}
+.url-status.ok{color:#1da04a}
+.url-status.err{color:#c0392b}
+
+/* A preview */
+.a-preview-thread{background:#fff;border:1px solid #e6ecf0;border-radius:16px;overflow:hidden;padding:16px 0}
+.a-preview-msg{display:flex;gap:12px;padding:8px 24px}
+.a-preview-left{display:flex;flex-direction:column;align-items:center;width:42px;flex-shrink:0}
+.preview-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;overflow:hidden;border:2px solid rgba(0,0,0,.05)}
+.a-preview-line{width:2px;flex:1;background:var(--thread-line);margin-top:3px;min-height:12px}
+.a-preview-msg:last-child .a-preview-line{display:none}
+.a-preview-right{flex:1;padding-top:0}
+.a-preview-name{font-weight:700;font-size:15px;line-height:42px;height:42px;display:flex;align-items:center}
+.a-preview-text{font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-word;padding-bottom:4px}
+.a-preview-text .action-text{color:#536471;font-style:italic}
+.a-preview-sys{padding:10px 24px;text-align:center;font-size:13px;color:#8899a6;font-style:italic;display:flex;align-items:center;gap:10px}
+.a-preview-sys::before,.a-preview-sys::after{content:'';flex:1;height:1px;background:#e6ecf0}
+
+/* ══════════════════════════
+   B TYPE — NOVEL
+══════════════════════════ */
+:root{
+  --page-font:'Noto Serif KR',serif;
+  --page-size:15px;--page-lh:1.9;--page-pad:48px;--page-gap:14px;--page-indent:1em;
+}
+.b-panel .char-item.selected{border-color:var(--b-accent);background:var(--b-accent-light)}
+.b-type-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px}
+.btype-btn{padding:6px 4px;border-radius:8px;font-size:12px;font-weight:600;border:1.5px solid #e6ecf0;background:#f7f9fa;cursor:pointer;color:#536471;font-family:'Noto Sans KR',sans-serif;transition:all .1s;text-align:center}
+.btype-btn.active{background:var(--b-accent);border-color:var(--b-accent);color:#fff}
+.b-composer-input{width:100%;padding:10px 12px;border:1px solid #e6ecf0;border-radius:12px;background:#f7f9fa;font-size:14px;color:#0f1419;outline:none;resize:vertical;line-height:1.6;font-family:'Noto Sans KR',sans-serif;min-height:70px;margin-bottom:8px}
+.b-composer-input:focus{border-color:var(--b-accent);background:#fff}
+.b-composer-input::placeholder{color:#8899a6}
+.block-list{display:flex;flex-direction:column;gap:5px;max-height:320px;overflow-y:auto}
+.block-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;border:1.5px solid transparent;cursor:pointer;transition:all .15s}
+.block-item:hover{background:#f7f9fa}
+.block-item.active-edit{border-color:var(--b-accent);background:var(--b-accent-light)}
+.block-type-badge{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700;flex-shrink:0}
+.badge-chapter{background:#fff3e0;color:#e65100}
+.badge-section{background:#e8f5e9;color:#2e7d32}
+.badge-body{background:#f7f9fa;color:#536471;border:1px solid #e6ecf0}
+.block-preview-text{font-size:12px;color:#536471;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.block-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.block-item:hover .block-actions,.block-item.active-edit .block-actions{opacity:1}
+.book-editor-wrap{background:#fff;border:1px solid #e6ecf0;border-radius:16px;overflow:hidden}
+.book-toolbar{padding:10px 20px;border-bottom:1px solid #e6ecf0;display:flex;align-items:center;gap:10px}
+.book-meta-input{flex:1;border:none;background:transparent;font-size:14px;font-weight:500;color:#536471;outline:none;font-family:'Noto Sans KR',sans-serif}
+.book-meta-input::placeholder{color:#8899a6}
+.book-canvas{padding:32px 28px;min-height:400px}
+.block-render{position:relative;padding:6px 0;border-radius:8px;transition:background .1s;cursor:pointer}
+.block-render:hover{background:rgba(121,75,196,.04)}
+.block-render.editing{background:var(--b-accent-light);border-radius:10px;padding:8px 10px;margin:0 -10px}
+.block-chapter{font-family:var(--page-font);font-size:calc(var(--page-size)*1.25);font-weight:700;margin-top:1.6em;margin-bottom:.6em;line-height:1.4}
+.block-section{font-family:var(--page-font);font-size:calc(var(--page-size)*1.05);font-weight:600;margin-top:1.2em;margin-bottom:.4em;line-height:1.5;color:#536471}
+.block-body{font-family:var(--page-font);font-size:var(--page-size);line-height:var(--page-lh);margin-bottom:var(--page-gap);word-break:keep-all;white-space:pre-wrap;text-indent:var(--page-indent)}
+.block-edit-area{width:100%;padding:6px 8px;border:1px solid var(--b-accent);border-radius:8px;background:#fff;font-family:'Noto Sans KR',sans-serif;font-size:14px;color:#0f1419;outline:none;resize:vertical;line-height:1.6;min-height:60px}
+.block-edit-actions{display:flex;gap:6px;margin-top:6px;justify-content:flex-end}
+.b-preview-outer{max-width:780px;margin:0 auto;padding:32px 16px}
+.page-book{background:#fffef9;border:1px solid #ddd6c8;border-radius:4px;padding:var(--page-pad);box-shadow:0 2px 20px rgba(0,0,0,.06),2px 2px 0 #e8e0d0,4px 4px 0 #ddd6c8;font-family:var(--page-font);font-size:var(--page-size);line-height:var(--page-lh);color:#1a1208;min-height:600px}
+.page-book-title{font-size:calc(var(--page-size)*1.7);font-weight:700;text-align:center;padding-bottom:20px;border-bottom:1px solid #ddd6c8;margin-bottom:28px}
+.page-book-meta{font-size:calc(var(--page-size)*.78);color:#8b7a5e;text-align:center;margin-top:-20px;margin-bottom:28px}
+.page-chapter{font-size:calc(var(--page-size)*1.25);font-weight:700;margin-top:2em;margin-bottom:.7em;line-height:1.4}
+.page-section{font-size:calc(var(--page-size)*1.05);font-weight:600;margin-top:1.4em;margin-bottom:.5em;line-height:1.5;color:#3a2e1a}
+.page-body{margin-bottom:var(--page-gap);word-break:keep-all;white-space:pre-wrap;text-indent:var(--page-indent)}
+
+/* ══════════════════════════
+   SETTINGS
+══════════════════════════ */
+.settings-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.settings-row:last-child{margin-bottom:0}
+.settings-label{font-size:13px;font-weight:600;color:#536471;width:80px;flex-shrink:0}
+.settings-control{flex:1}
+.settings-value{font-size:13px;font-weight:700;min-width:42px;text-align:right}
+.sv-a{color:var(--a-accent)}.sv-b{color:var(--b-accent)}
+.settings-row input[type=range]{width:100%;cursor:pointer}
+input[type=range].a-range{accent-color:var(--a-accent)}
+input[type=range].b-range{accent-color:var(--b-accent)}
+.font-options{display:flex;gap:6px;flex-wrap:wrap}
+.font-opt{padding:5px 12px;border-radius:14px;font-size:13px;border:1.5px solid #e6ecf0;background:#f7f9fa;cursor:pointer;color:#536471;transition:all .12s}
+.font-opt-a.active{border-color:var(--a-accent);background:var(--a-accent-light);color:var(--a-accent);font-weight:700}
+.font-opt-b.active{border-color:var(--b-accent);background:var(--b-accent-light);color:var(--b-accent);font-weight:700}
+.av-size-opts,.indent-opts{display:flex;gap:6px}
+.av-size-opt,.indent-opt{flex:1;padding:6px 0;text-align:center;border-radius:10px;font-size:13px;border:1.5px solid #e6ecf0;background:#f7f9fa;cursor:pointer;color:#536471;transition:all .12s}
+.av-size-opt.active{border-color:var(--a-accent);background:var(--a-accent-light);color:var(--a-accent);font-weight:700}
+.indent-opt.active{border-color:var(--b-accent);background:var(--b-accent-light);color:var(--b-accent);font-weight:700}
+.settings-divider{height:1px;background:#e6ecf0;margin:16px 0}
+.settings-section-title{font-size:12px;font-weight:700;color:#8899a6;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
+
+/* ══════════════════════════
+   MODAL
+══════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:999;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:16px;padding:24px 28px;width:440px;max-width:95vw;transform:scale(.96);transition:transform .2s;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.modal-overlay.open .modal{transform:scale(1)}
+.modal-title{font-weight:700;font-size:18px;margin-bottom:18px}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.form-label{font-size:13px;font-weight:600;color:#536471;margin-bottom:5px;display:block}
+.form-group{margin-bottom:14px}
+.export-btn{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid #e6ecf0;border-radius:12px;background:#fff;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:14px;color:#0f1419;transition:all .15s;width:100%;margin-bottom:8px}
+.export-a:hover{border-color:var(--a-accent);background:var(--a-accent-light);color:var(--a-accent)}
+.export-b:hover{border-color:var(--b-accent);background:var(--b-accent-light);color:var(--b-accent)}
+.export-icon{font-size:22px}
+
+/* ══════════════════════════
+   C TYPE — KAKAO CHAT
+══════════════════════════ */
+:root{--c-accent:#3c1e1e;--c-accent-light:#fff9e6;--kbg:#b2c8df;--kbg2:#9ab5ce;}
+.logo-c{color:#3c1e1e!important;font-size:11px!important;font-weight:900!important}
+
+/* char card in sidebar */
+.kchar-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;border:1.5px solid transparent;cursor:pointer;transition:all .15s}
+.kchar-item:hover{background:#f7f9fa}
+.kchar-item.selected{border-color:#3c1e1e;background:#fff9e6}
+.kchar-name{font-size:13px;font-weight:600;flex:1}
+.kchar-bubble-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:1px solid rgba(0,0,0,.12)}
+.kchar-pos-badge{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700;flex-shrink:0}
+.kchar-pos-l{background:#e8f5fd;color:#1d9bf0}
+.kchar-pos-r{background:#fff9e6;color:#b8860b}
+.kchar-actions{display:flex;gap:2px;opacity:0;transition:opacity .15s;flex-shrink:0}
+.kchar-item:hover .kchar-actions,.kchar-item.selected .kchar-actions{opacity:1}
+
+/* type toggle */
+.ktype-btns{display:flex;border:1px solid #e6ecf0;border-radius:20px;overflow:hidden;margin-bottom:10px}
+.ktype-btn{flex:1;padding:7px 0;font-size:13px;font-weight:500;border:none;background:transparent;cursor:pointer;color:#536471;font-family:'Noto Sans KR',sans-serif;transition:all .1s}
+.ktype-btn.active{background:#0f1419;color:#fff;font-weight:700}
+.k-sel-badge{display:flex;align-items:center;gap:8px;padding:7px 12px;background:#fff9e6;border-radius:20px;font-size:13px;color:#3c1e1e;font-weight:600;margin-bottom:8px}
+
+/* chat window */
+.kakaochat-wrap{background:#fff;border:1px solid #e6ecf0;border-radius:16px;overflow:hidden}
+.kakaochat-topbar{background:#3c1e1e;padding:12px 20px;display:flex;align-items:center;gap:10px}
+.kakaochat-room-input{flex:1;background:transparent;border:none;outline:none;font-size:15px;font-weight:600;color:#fff;font-family:'Noto Sans KR',sans-serif}
+.kakaochat-room-input::placeholder{color:rgba(255,255,255,.4)}
+.kakaochat-body{background:var(--kbg);padding:16px 12px;min-height:360px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+
+/* bubbles */
+.kmsg-row{display:flex;align-items:flex-end;gap:6px;margin-bottom:2px}
+.kmsg-row.right{flex-direction:row-reverse}
+.kmsg-row.right .kmsg-meta{align-items:flex-end}
+.kmsg-av{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;overflow:hidden;align-self:flex-start;border:1.5px solid rgba(0,0,0,.08)}
+.kmsg-av img{width:100%;height:100%;object-fit:cover}
+.kmsg-body{display:flex;flex-direction:column;max-width:68%}
+.kmsg-row.right .kmsg-body{align-items:flex-end}
+.kmsg-name{font-size:11px;font-weight:600;color:#1a1208;margin-bottom:3px;padding-left:2px}
+.kmsg-row.right .kmsg-name{display:none}
+.kmsg-bubble{padding:9px 13px;border-radius:18px;font-size:14px;line-height:1.55;word-break:break-word;white-space:pre-wrap;position:relative;max-width:100%;cursor:pointer}
+.kmsg-bubble.left{border-top-left-radius:4px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.kmsg-bubble.right{border-top-right-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.kmsg-bubble .action-text{font-style:italic;opacity:.75}
+.kmsg-meta{display:flex;flex-direction:column;gap:3px;align-self:flex-end;flex-shrink:0}
+.kmsg-time{font-size:10px;color:rgba(0,0,0,.4)}
+.kmsg-bubble-actions{display:none;gap:3px;flex-direction:column}
+.kmsg-row:hover .kmsg-bubble-actions{display:flex}
+.kbub-icon-btn{width:22px;height:22px;border:none;background:rgba(0,0,0,.15);border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;transition:background .1s}
+.kbub-icon-btn:hover{background:rgba(0,0,0,.3)}
+.kbub-icon-btn.danger:hover{background:rgba(180,0,0,.5)}
+
+/* sys date divider */
+.ksys-msg{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:11px;color:rgba(0,0,0,.45)}
+.ksys-msg::before,.ksys-msg::after{content:'';flex:1;height:1px;background:rgba(0,0,0,.12)}
+.ksys-msg:hover{cursor:default}
+.ksys-wrap{position:relative;display:flex;align-items:center;gap:6px}
+.ksys-del{display:none;font-size:10px;padding:1px 6px;border:none;background:rgba(0,0,0,.15);border-radius:8px;color:rgba(0,0,0,.5);cursor:pointer}
+.ksys-wrap:hover .ksys-del{display:inline}
+
+/* k preview */
+.k-preview-wrap{max-width:420px;margin:0 auto;padding:24px 16px}
+.k-phone-frame{background:#fff;border-radius:36px;border:8px solid #222;box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden}
+.k-phone-topbar{background:#3c1e1e;padding:14px 20px 12px;display:flex;align-items:center;gap:8px}
+.k-phone-title{font-size:15px;font-weight:700;color:#fff;flex:1;text-align:center}
+.k-phone-body{background:var(--kbg);padding:14px 10px;min-height:480px;display:flex;flex-direction:column;gap:4px}
+
+/* k settings */
+.pos-toggle{display:flex;gap:6px}
+.pos-opt{flex:1;padding:6px 0;text-align:center;border-radius:10px;font-size:13px;border:1.5px solid #e6ecf0;background:#f7f9fa;cursor:pointer;color:#536471;transition:all .12s}
+.pos-opt.active{border-color:#3c1e1e;background:#fff9e6;color:#3c1e1e;font-weight:700}
+.bubble-color-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.bcolor-dot{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .1s}
+.bcolor-dot:hover{transform:scale(1.15)}
+.bcolor-dot.selected{border-color:#333;transform:scale(1.15)}
+.kbg-opts{display:flex;gap:6px;flex-wrap:wrap}
+.kbg-opt{padding:5px 12px;border-radius:14px;font-size:12px;border:1.5px solid #e6ecf0;background:#f7f9fa;cursor:pointer;color:#536471;transition:all .12s}
+.kbg-opt.active{border-color:#3c1e1e;background:#fff9e6;color:#3c1e1e;font-weight:700}
+
+/* ── BG TOGGLE ── */
+.bg-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
+.bg-toggle-label{font-size:13px;font-weight:600;color:#536471}
+.bg-toggle-desc{font-size:11px;color:#8899a6;margin-top:2px}
+.toggle-switch{position:relative;width:42px;height:24px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:#ccd6dd;border-radius:24px;cursor:pointer;transition:background .2s}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-switch input:checked + .toggle-slider{background:#1d9bf0}
+.toggle-switch.purple input:checked + .toggle-slider{background:#794bc4}
+.toggle-switch.kakao input:checked + .toggle-slider{background:#3c1e1e}
+.toggle-switch input:checked + .toggle-slider::before{transform:translateX(18px)}
+
+
+/* ── TISTORY EXPORT ── */
+.export-btn-tistory{display:flex;align-items:center;gap:12px;padding:14px 16px;border:2px solid #f90;border-radius:12px;background:#fff;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:14px;color:#c76b00;font-weight:700;transition:all .15s;width:100%;margin-bottom:8px}
+.export-btn-tistory:hover{background:#fff8ee}
+.tistory-copy-toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);background:#0f1419;color:#fff;padding:12px 24px;border-radius:24px;font-size:13px;font-weight:600;z-index:9999;opacity:0;pointer-events:none;transition:opacity .25s}
+.tistory-copy-toast.show{opacity:1}
+
+/* ── TXT IMPORT ── */
+.import-drop-zone{border:2px dashed #e6ecf0;border-radius:12px;padding:18px 12px;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa;position:relative}
+.import-drop-zone:hover,.import-drop-zone.drag-over{border-color:#1d9bf0;background:#e8f5fd}
+.import-drop-zone.purple:hover,.import-drop-zone.purple.drag-over{border-color:#794bc4;background:#f3f0ff}
+.import-drop-zone.kakao:hover,.import-drop-zone.kakao.drag-over{border-color:#fee500;background:#fff9e6}
+.import-drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.import-drop-icon{font-size:22px;margin-bottom:6px}
+.import-drop-text{font-size:13px;font-weight:600;color:#536471}
+.import-drop-sub{font-size:11px;color:#8899a6;margin-top:3px}
+.import-result-banner{padding:10px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-top:8px;display:none}
+.import-result-banner.ok{background:#e8f5e9;color:#2e7d32;display:block}
+.import-result-banner.err{background:#fdecea;color:#c0392b;display:block}
+.import-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:1100;opacity:0;pointer-events:none;transition:opacity .2s}
+.import-modal-overlay.open{opacity:1;pointer-events:all}
+.import-modal{background:#fff;border-radius:16px;padding:24px 28px;width:480px;max-width:96vw;transform:scale(.96);transition:transform .2s;box-shadow:0 8px 32px rgba(0,0,0,.14);max-height:90vh;overflow-y:auto}
+.import-modal-overlay.open .import-modal{transform:scale(1)}
+.import-char-table{width:100%;border-collapse:collapse;margin-top:8px}
+.import-char-table th{font-size:11px;font-weight:700;color:#8899a6;text-align:left;padding:4px 6px;border-bottom:1px solid #e6ecf0}
+.import-char-table td{padding:6px 6px;border-bottom:1px solid #f0f0f0;font-size:13px;vertical-align:middle}
+.import-char-table select{font-size:12px;padding:3px 6px;border:1px solid #ccd6dd;border-radius:8px;background:#fff;outline:none}
+.import-char-color-dot{width:20px;height:20px;border-radius:50%;display:inline-block;vertical-align:middle;border:1.5px solid rgba(0,0,0,.1)}
+.color-select-wrap{display:flex;align-items:center;gap:6px}
+
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════
+     HOME SCREEN
+══════════════════════════ -->
+<div id="screen-home" class="screen active" style="display:flex;flex-direction:column;min-height:100vh">
+  <header class="site-header">
+    <div class="site-logo"><div class="logo-icon logo-home">✦</div>역극 백업소</div>
+    <div></div>
+    <div style="font-size:12px;color:#8899a6">유형을 선택하세요</div>
+  </header>
+  <div class="home-hero">
+    <h1 class="home-title">어떤 형식으로 정리할까요?</h1>
+    <p class="home-sub">백업 유형을 선택하세요</p>
+    <div class="home-cards">
+      <div class="home-card card-a" onclick="goTo('a')">
+        <div class="card-badge badge-a">A TYPE</div>
+        <div class="card-icon">💬</div>
+        <div class="card-title">트위터 타래형</div>
+        <div class="card-desc">캐릭터 아바타와 함께<br>대화 형식으로 정리</div>
+        <div class="card-preview">
+          <div class="preview-a-mini">
+            <div class="thread-mini">
+              <div style="display:flex;flex-direction:column;align-items:center">
+                <div class="av-mini" style="background:#1d9bf0">유</div>
+                <div class="vline-mini"></div>
+              </div>
+              <div><div class="tm-name" style="color:#1d9bf0">유저1</div><div class="tm-text">(창고 앞에서) 여기가 맞아요?</div></div>
+            </div>
+            <div class="thread-mini">
+              <div><div class="av-mini" style="background:#794bc4">유</div></div>
+              <div style="margin-left:8px"><div class="tm-name" style="color:#794bc4">유저2</div><div class="tm-text">늦었네. 한 시간은 기다렸어.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="home-card card-b" onclick="goTo('b')">
+        <div class="card-badge badge-b">B TYPE</div>
+        <div class="card-icon">📖</div>
+        <div class="card-title">소설 / 산문형</div>
+        <div class="card-desc">A5 책 느낌의 레이아웃으로<br>소설·일기·산문 정리</div>
+        <div class="card-preview">
+          <div class="preview-b-mini">
+            <div class="pb-title-mini">[1일차] 망상은 무망하다.</div>
+            <div class="pb-text-mini">꿈을 꾸었다. 그곳은 풀잎이 스치기만 해도 시원한 바람소리가 재잘거리듯 울려 퍼지는 드넓은 초원이었고...</div>
+          </div>
+        </div>
+      </div>
+      <div class="home-card" style="border:1.5px solid #e6ecf0;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='#fee500';this.style.boxShadow='0 4px 24px rgba(254,229,0,.25)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#e6ecf0';this.style.boxShadow='none';this.style.transform='none'" onclick="goTo('c')">
+        <div class="card-badge" style="background:#fff9e6;color:#b8860b">C TYPE</div>
+        <div class="card-icon">💬</div>
+        <div class="card-title">카카오톡형</div>
+        <div class="card-desc">말풍선 색상·위치 지정<br>채팅 UI 스타일로 정리</div>
+        <div class="card-preview" style="margin-top:16px;border-radius:12px;overflow:hidden;border:1px solid #e6ecf0">
+          <div style="background:#3c1e1e;padding:7px 12px;font-size:11px;font-weight:700;color:#fff">채팅방</div>
+          <div style="background:#b2c8df;padding:10px 10px;display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;gap:6px;align-items:flex-end">
+              <div style="width:24px;height:24px;border-radius:50%;background:#1d9bf0;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff">유</div>
+              <div style="background:#fff;padding:5px 9px;border-radius:12px;border-top-left-radius:3px;font-size:10px;line-height:1.5">안녕하세요!</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:flex-end;flex-direction:row-reverse">
+              <div style="background:#fee500;padding:5px 9px;border-radius:12px;border-top-right-radius:3px;font-size:10px;line-height:1.5">네, 안녕!</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="home-footer">역극 백업소 · A / B / C 세 가지 형식 모두 HTML로 내보내기 가능</div>
+</div>
+
+<!-- ══════════════════════════
+     A TYPE SCREEN
+══════════════════════════ -->
+<div id="screen-a" class="screen">
+  <header class="site-header tab-a">
+    <div style="display:flex;align-items:center;gap:14px">
+      <button class="back-btn" onclick="goTo('home')">← 홈</button>
+      <div class="site-logo"><div class="logo-icon logo-a">✦</div>역극 백업 <span style="font-size:12px;color:#8899a6;font-weight:400;margin-left:4px">A TYPE</span></div>
+    </div>
+    <div class="header-tabs tab-a">
+      <button class="tab-btn active" onclick="aTab('edit')">편집</button>
+      <button class="tab-btn" onclick="aTab('preview')">미리보기</button>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline btn-sm" onclick="openModal('a-settings-modal')">⚙ 설정</button>
+      <button class="btn btn-outline btn-sm" onclick="openModal('a-export-modal')">내보내기</button>
+    </div>
+  </header>
+
+  <div id="a-edit-pane">
+    <div class="main-layout">
+      <div class="sidebar">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">인물</span><button class="btn btn-blue btn-sm" onclick="aOpenAddChar()">+ 추가</button></div>
+          <div class="panel-body"><div class="char-list" id="a-char-list"><div class="no-msg">인물을 추가해 주세요</div></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">📂 TXT 불러오기</span></div>
+          <div class="panel-body">
+            <div class="import-drop-zone" id="a-drop-zone"
+              ondragover="event.preventDefault();this.classList.add('drag-over')"
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="event.preventDefault();this.classList.remove('drag-over');aHandleImport(event.dataTransfer.files[0])">
+              <input type="file" accept=".txt" onchange="aHandleImport(this.files[0]);this.value=''" />
+              <div class="import-drop-icon">📄</div>
+              <div class="import-drop-text">TXT 파일 드래그 또는 클릭</div>
+              <div class="import-drop-sub">이름 -A12, 오후 03:55 형식<br>카카오톡 형식도 자동 인식</div>
+            </div>
+            <div class="import-result-banner" id="a-import-banner"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">대사 추가</span></div>
+          <div class="panel-body">
+            <div class="type-btns">
+              <button class="type-btn active" onclick="aSetMsgType('char')" id="a-type-char">캐릭터 대사</button>
+              <button class="type-btn" onclick="aSetMsgType('sys')" id="a-type-sys">시스템 메시지</button>
+            </div>
+            <div id="a-char-composer" style="display:flex;flex-direction:column">
+              <div id="a-sel-char-display"></div>
+              <textarea class="msg-textarea" id="a-msg-input" placeholder="대사를 입력하세요...&#10;(행동 묘사는 괄호로 감싸면 이탤릭으로 표시됩니다)"></textarea>
+              <button class="btn btn-dark btn-full" onclick="aAddMsg()">추가 ↓</button>
+              <p class="help-text" style="text-align:center;margin-top:5px">Ctrl+Enter 단축키</p>
+            </div>
+            <div id="a-sys-composer" style="display:none">
+              <input class="sys-msg-input" id="a-sys-input" placeholder="예) --- 다음 날 아침 ---" />
+              <button class="btn btn-outline btn-full" onclick="aAddSys()">추가 ↓</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="content-area">
+        <div class="thread-view">
+          <div class="thread-title-bar">
+            <input class="thread-title-input" id="a-thread-title" placeholder="역극 제목을 입력하세요" />
+            <button class="icon-btn" onclick="aClearAll()" style="font-size:15px" title="전체 삭제">🗑</button>
+          </div>
+          <div class="thread-body" id="a-thread-body">
+            <div class="empty-state" id="a-empty-state"><div class="empty-icon">💬</div><p>좌측 패널에서 인물을 추가하고<br>대사를 작성해 보세요</p></div>
+          </div>
+          <div class="actions-bar">
+            <span style="font-size:13px;color:#8899a6;flex:1" id="a-msg-count">메시지 0개</span>
+            <button class="btn btn-sm btn-danger" onclick="aResetConv()">대화 초기화</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="a-preview-pane" style="display:none">
+    <div style="max-width:640px;margin:0 auto;padding:24px 16px">
+      <div style="font-size:22px;font-weight:700;margin-bottom:4px" id="a-prev-title"></div>
+      <div style="font-size:13px;color:#8899a6;margin-bottom:20px" id="a-prev-meta"></div>
+      <div class="a-preview-thread" id="a-prev-thread"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════
+     B TYPE SCREEN
+══════════════════════════ -->
+<div id="screen-b" class="screen">
+  <header class="site-header tab-b">
+    <div style="display:flex;align-items:center;gap:14px">
+      <button class="back-btn" onclick="goTo('home')">← 홈</button>
+      <div class="site-logo"><div class="logo-icon logo-b">📖</div>소설 백업 <span style="font-size:12px;color:#8899a6;font-weight:400;margin-left:4px">B TYPE</span></div>
+    </div>
+    <div class="header-tabs tab-b">
+      <button class="tab-btn active" onclick="bTab('edit')" id="b-tab-edit">편집</button>
+      <button class="tab-btn" onclick="bTab('preview')" id="b-tab-prev">미리보기</button>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline btn-sm" onclick="openModal('b-settings-modal')">⚙ 설정</button>
+      <button class="btn btn-outline btn-sm" onclick="openModal('b-export-modal')">내보내기</button>
+    </div>
+  </header>
+
+  <div id="b-edit-pane">
+    <div class="main-layout">
+      <div class="sidebar b-panel">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">목차</span><span style="font-size:12px;color:#8899a6" id="b-block-count">0개</span></div>
+          <div class="panel-body"><div class="block-list" id="b-block-list"><div class="no-msg">블록을 추가해 주세요</div></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">블록 추가</span></div>
+          <div class="panel-body">
+            <div class="b-type-btns">
+              <button class="btype-btn active" onclick="bSetType('chapter')" id="bt-chapter">📌 챕터</button>
+              <button class="btype-btn" onclick="bSetType('section')" id="bt-section">▸ 소제목</button>
+              <button class="btype-btn" onclick="bSetType('body')" id="bt-body">¶ 본문</button>
+            </div>
+            <textarea class="b-composer-input" id="b-block-input" placeholder="챕터 제목을 입력하세요&#10;예) [1일차] 망상은 무망하다."></textarea>
+            <button class="btn btn-dark btn-full" onclick="bAddBlock()">추가 ↓</button>
+            <p class="help-text" style="text-align:center;margin-top:5px">Ctrl+Enter 단축키</p>
+          </div>
+        </div>
+
+        <!-- TXT IMPORT PANEL B -->
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">📂 TXT 불러오기</span></div>
+          <div class="panel-body">
+            <div class="import-drop-zone purple" id="b-drop-zone">
+              <input type="file" accept=".txt" onchange="bHandleImport(this.files[0])" />
+              <div class="import-drop-icon">📄</div>
+              <div class="import-drop-text">TXT 파일 드래그 또는 클릭</div>
+              <div class="import-drop-sub">빈 줄로 구분된 단락 / [챕터] 자동 인식</div>
+            </div>
+            <div class="import-result-banner" id="b-import-banner"></div>
+          </div>
+        </div>
+        <div class="panel">
+        <div class="panel-header"><span class="panel-title">📂 TXT 불러오기</span></div>
+        <div class="panel-body">
+          <div class="import-drop-zone purple" id="b-drop-zone"
+            ondragover="event.preventDefault();this.classList.add('drag-over')"
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="event.preventDefault();this.classList.remove('drag-over');bHandleImport(event.dataTransfer.files[0])">
+            <input type="file" accept=".txt" onchange="bHandleImport(this.files[0]);this.value=''" />
+            <div class="import-drop-icon">📄</div>
+            <div class="import-drop-text">TXT 파일 드래그 또는 클릭</div>
+            <div class="import-drop-sub">빈 줄로 구분된 단락 자동 인식<br>[챕터] # 제목 자동 분류</div>
+          </div>
+          <div class="import-result-banner" id="b-import-banner"></div>
+        </div>
+      </div>
+      <button class="btn btn-danger btn-full" style="border-radius:12px;padding:10px;margin-top:4px" onclick="bResetAll()">대화 초기화</button>
+      </div>
+      <div class="content-area">
+        <div class="book-editor-wrap">
+          <div class="book-toolbar">
+            <input class="book-meta-input" id="b-book-title" placeholder="작품 제목 (선택)" />
+            <input class="book-meta-input" id="b-book-author" placeholder="작가명 (선택)" style="text-align:right;max-width:160px" />
+          </div>
+          <div class="book-canvas" id="b-book-canvas">
+            <div class="empty-state" id="b-empty-canvas"><div class="empty-icon">📖</div><p>좌측에서 챕터, 소제목, 본문 블록을<br>추가해 보세요</p></div>
+          </div>
+          <div class="actions-bar">
+            <span style="font-size:13px;color:#8899a6;flex:1" id="b-word-count">0자</span>
+            <span style="font-size:12px;color:#8899a6" id="b-block-count2">블록 0개</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="b-preview-pane" style="display:none">
+    <div class="b-preview-outer"><div class="page-book" id="b-page-book"></div></div>
+  </div>
+</div>
+
+<!-- ═══ A MODALS ═══ -->
+<div class="modal-overlay" id="a-char-modal">
+  <div class="modal">
+    <div class="modal-title" id="a-char-modal-title">인물 추가</div>
+    <div class="form-group"><label class="form-label">이름</label><input class="input-field" id="a-char-name" placeholder="캐릭터 이름" /></div>
+    <div class="form-group"><label class="form-label">아바타 색상</label><div class="color-palette" id="a-color-palette"></div></div>
+    <div class="form-group">
+      <label class="form-label">아바타 이미지 (선택)</label>
+      <div class="img-src-tabs">
+        <button class="img-src-tab active" onclick="aSetImgSrc('url')" id="a-src-url">🔗 URL 링크</button>
+        <button class="img-src-tab" onclick="aSetImgSrc('file')" id="a-src-file">📁 파일 업로드</button>
+      </div>
+      <div id="a-img-url-sec"><input class="input-field" id="a-char-img-url" placeholder="https://example.com/avatar.jpg" oninput="aPreviewUrl()" /><p class="url-status" id="a-url-status">URL을 입력하면 미리보기가 표시됩니다</p></div>
+      <div id="a-img-file-sec" style="display:none"><input type="file" id="a-char-img-file" accept="image/*" style="font-size:12px;width:100%;margin-top:4px" onchange="aPreviewFile()" /></div>
+      <div class="img-preview-wrap"><img id="a-char-img-preview" /></div>
+      <p class="help-text">이미지 없으면 이름 첫 글자로 표시됩니다</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('a-char-modal')">취소</button>
+      <button class="btn btn-blue" onclick="aSaveChar()" id="a-char-save-btn">추가</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="a-edit-msg-modal">
+  <div class="modal">
+    <div class="modal-title">대사 수정</div>
+    <textarea class="msg-textarea" id="a-edit-msg-input" style="min-height:130px"></textarea>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('a-edit-msg-modal')">취소</button><button class="btn btn-blue" onclick="aSaveEditMsg()">저장</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="a-settings-modal">
+  <div class="modal" style="width:460px">
+    <div class="modal-title">⚙ 설정 (A TYPE)</div>
+    <div class="settings-section-title">텍스트</div>
+    <div class="settings-row"><span class="settings-label">글씨 크기</span><div class="settings-control"><input type="range" class="a-range" min="12" max="20" step="1" value="15" id="a-cfg-fs" oninput="aApplyCfg()" /></div><span class="settings-value sv-a" id="a-cfg-fs-v">15px</span></div>
+    <div class="settings-row"><span class="settings-label">줄 간격</span><div class="settings-control"><input type="range" class="a-range" min="140" max="220" step="5" value="170" id="a-cfg-lh" oninput="aApplyCfg()" /></div><span class="settings-value sv-a" id="a-cfg-lh-v">1.70</span></div>
+    <div class="settings-row" style="align-items:flex-start"><span class="settings-label" style="padding-top:4px">폰트</span><div class="settings-control"><div class="font-options" id="a-font-opts">
+      <button class="font-opt font-opt-a active" data-font="'Noto Sans KR',sans-serif" onclick="aSelFont(this)">노토산스</button>
+      <button class="font-opt font-opt-a" data-font="'Nanum Gothic',sans-serif" onclick="aSelFont(this)" style="font-family:'Nanum Gothic',sans-serif">나눔고딕</button>
+      <button class="font-opt font-opt-a" data-font="'Nanum Myeongjo',serif" onclick="aSelFont(this)" style="font-family:'Nanum Myeongjo',serif">나눔명조</button>
+      <button class="font-opt font-opt-a" data-font="'Malgun Gothic',sans-serif" onclick="aSelFont(this)" style="font-family:'Malgun Gothic',sans-serif">맑은고딕</button>
+    </div></div></div>
+    <div class="settings-divider"></div>
+    <div class="settings-section-title">레이아웃</div>
+    <div class="settings-row"><span class="settings-label">아바타 크기</span><div class="settings-control"><div class="av-size-opts"><button class="av-size-opt" data-av="32" onclick="aSelAv(this)">소</button><button class="av-size-opt active" data-av="40" onclick="aSelAv(this)">중</button><button class="av-size-opt" data-av="50" onclick="aSelAv(this)">대</button></div></div></div>
+    <div class="settings-row"><span class="settings-label">메시지 여백</span><div class="settings-control"><input type="range" class="a-range" min="4" max="20" step="2" value="8" id="a-cfg-mp" oninput="aApplyCfg()" /></div><span class="settings-value sv-a" id="a-cfg-mp-v">8px</span></div>
+    <div class="settings-divider"></div>
+    <div class="settings-section-title">배경</div>
+    <div class="bg-toggle-row">
+      <div><div class="bg-toggle-label">페이지 배경색 제거</div><div class="bg-toggle-desc">흰색 배경 없이 투명하게</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="a-nobg" onchange="aApplyCfg()" /><span class="toggle-slider"></span></label>
+    </div>
+    <div class="bg-toggle-row">
+      <div><div class="bg-toggle-label">카드 테두리·그림자 제거</div><div class="bg-toggle-desc">스레드 박스 효과 제거</div></div>
+      <label class="toggle-switch"><input type="checkbox" id="a-noborder" onchange="aApplyCfg()" /><span class="toggle-slider"></span></label>
+    </div>
+    <div style="display:flex;justify-content:space-between"><button class="btn btn-outline btn-sm" onclick="aResetCfg()">기본값으로</button><button class="btn btn-blue btn-sm" onclick="closeModal('a-settings-modal')">완료</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="a-export-modal">
+  <div class="modal">
+    <div class="modal-title">내보내기 (A TYPE)</div>
+    <button class="export-btn-tistory" onclick="aTistoryCopy()"><span class="export-icon">🟠</span><div style="text-align:left"><div>티스토리 코드 복사</div><div style="font-size:12px;font-weight:400;color:#e08020">인라인 스타일 전용 · 붙여넣기 바로 가능</div></div></button>
+    <button class="export-btn export-a" onclick="aExportHTML()"><span class="export-icon">🌐</span><div style="text-align:left"><div style="font-weight:700">HTML 파일로 저장</div><div style="font-size:12px;color:#8899a6">브라우저에서 바로 열 수 있는 파일</div></div></button>
+    <button class="export-btn export-a" onclick="aExportJSON()"><span class="export-icon">💾</span><div style="text-align:left"><div style="font-weight:700">JSON 백업</div><div style="font-size:12px;color:#8899a6">나중에 불러올 수 있는 데이터</div></div></button>
+    <button class="export-btn export-a" onclick="aImportJSON()"><span class="export-icon">📂</span><div style="text-align:left"><div style="font-weight:700">JSON 불러오기</div><div style="font-size:12px;color:#8899a6">저장한 데이터 불러오기</div></div></button>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('a-export-modal')">닫기</button></div>
+  </div>
+</div>
+
+<!-- ═══ B MODALS ═══ -->
+<div class="modal-overlay" id="b-settings-modal">
+  <div class="modal" style="width:460px">
+    <div class="modal-title">⚙ 설정 (B TYPE)</div>
+    <div class="settings-section-title">텍스트</div>
+    <div class="settings-row"><span class="settings-label">글씨 크기</span><div class="settings-control"><input type="range" class="b-range" min="12" max="22" step="1" value="15" id="b-cfg-fs" oninput="bApplyCfg()" /></div><span class="settings-value sv-b" id="b-cfg-fs-v">15px</span></div>
+    <div class="settings-row"><span class="settings-label">줄 간격</span><div class="settings-control"><input type="range" class="b-range" min="140" max="240" step="5" value="190" id="b-cfg-lh" oninput="bApplyCfg()" /></div><span class="settings-value sv-b" id="b-cfg-lh-v">1.90</span></div>
+    <div class="settings-row"><span class="settings-label">문단 간격</span><div class="settings-control"><input type="range" class="b-range" min="0" max="40" step="2" value="14" id="b-cfg-pg" oninput="bApplyCfg()" /></div><span class="settings-value sv-b" id="b-cfg-pg-v">14px</span></div>
+    <div class="settings-row" style="align-items:flex-start"><span class="settings-label" style="padding-top:4px">폰트</span><div class="settings-control"><div class="font-options">
+      <button class="font-opt font-opt-b active" data-font="'Noto Serif KR',serif" onclick="bSelFont(this)">노토명조</button>
+      <button class="font-opt font-opt-b" data-font="'Noto Sans KR',sans-serif" onclick="bSelFont(this)">노토산스</button>
+      <button class="font-opt font-opt-b" data-font="'Nanum Myeongjo',serif" onclick="bSelFont(this)" style="font-family:'Nanum Myeongjo',serif">나눔명조</button>
+      <button class="font-opt font-opt-b" data-font="'Nanum Gothic',sans-serif" onclick="bSelFont(this)" style="font-family:'Nanum Gothic',sans-serif">나눔고딕</button>
+      <button class="font-opt font-opt-b" data-font="'Malgun Gothic',sans-serif" onclick="bSelFont(this)" style="font-family:'Malgun Gothic',sans-serif">맑은고딕</button>
+    </div></div></div>
+    <div class="settings-divider"></div>
+    <div class="settings-section-title">레이아웃</div>
+    <div class="settings-row"><span class="settings-label">페이지 여백</span><div class="settings-control"><input type="range" class="b-range" min="20" max="80" step="4" value="48" id="b-cfg-pp" oninput="bApplyCfg()" /></div><span class="settings-value sv-b" id="b-cfg-pp-v">48px</span></div>
+    <div class="settings-row" style="align-items:flex-start"><span class="settings-label" style="padding-top:4px">들여쓰기</span><div class="settings-control"><div class="indent-opts"><button class="indent-opt active" data-indent="1em" onclick="bSelIndent(this)">있음</button><button class="indent-opt" data-indent="0" onclick="bSelIndent(this)">없음</button></div></div></div>
+    <div class="settings-divider"></div>
+    <div class="settings-section-title">배경</div>
+    <div class="bg-toggle-row">
+      <div><div class="bg-toggle-label">페이지 배경색 제거</div><div class="bg-toggle-desc">크림색 배경 없이 흰색으로</div></div>
+      <label class="toggle-switch purple"><input type="checkbox" id="b-nobg" onchange="bApplyCfg()" /><span class="toggle-slider"></span></label>
+    </div>
+    <div class="bg-toggle-row">
+      <div><div class="bg-toggle-label">책 그림자 효과 제거</div><div class="bg-toggle-desc">박스 그림자·테두리 제거</div></div>
+      <label class="toggle-switch purple"><input type="checkbox" id="b-noshadow" onchange="bApplyCfg()" /><span class="toggle-slider"></span></label>
+    </div>
+    <div style="display:flex;justify-content:space-between"><button class="btn btn-outline btn-sm" onclick="bResetCfg()">기본값으로</button><button class="btn btn-purple btn-sm" onclick="closeModal('b-settings-modal')">완료</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="b-export-modal">
+  <div class="modal">
+    <div class="modal-title">내보내기 (B TYPE)</div>
+    <button class="export-btn-tistory" onclick="bTistoryCopy()"><span class="export-icon">🟠</span><div style="text-align:left"><div>티스토리 코드 복사</div><div style="font-size:12px;font-weight:400;color:#e08020">인라인 스타일 전용 · 붙여넣기 바로 가능</div></div></button>
+    <button class="export-btn export-b" onclick="bExportHTML()"><span class="export-icon">🌐</span><div style="text-align:left"><div style="font-weight:700">HTML 파일로 저장</div><div style="font-size:12px;color:#8899a6">브라우저에서 바로 열 수 있는 파일</div></div></button>
+    <button class="export-btn export-b" onclick="bExportJSON()"><span class="export-icon">💾</span><div style="text-align:left"><div style="font-weight:700">JSON 백업</div><div style="font-size:12px;color:#8899a6">나중에 불러올 수 있는 데이터</div></div></button>
+    <button class="export-btn export-b" onclick="bImportJSON()"><span class="export-icon">📂</span><div style="text-align:left"><div style="font-weight:700">JSON 불러오기</div><div style="font-size:12px;color:#8899a6">저장한 데이터 불러오기</div></div></button>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('b-export-modal')">닫기</button></div>
+  </div>
+</div>
+
+<input type="file" id="a-json-import" accept=".json" style="display:none" onchange="aLoadJSON()" />
+<input type="file" id="b-json-import" accept=".json" style="display:none" onchange="bLoadJSON()" />
+
+<!-- ══════════════════════════
+     C TYPE SCREEN — KAKAO
+══════════════════════════ -->
+<div id="screen-c" class="screen">
+  <header class="site-header tab-c">
+    <div style="display:flex;align-items:center;gap:14px">
+      <button class="back-btn" onclick="goTo('home')">← 홈</button>
+      <div class="site-logo"><div class="logo-icon logo-c" style="color:#3c1e1e!important">카</div>카카오톡 백업 <span style="font-size:12px;color:#8899a6;font-weight:400;margin-left:4px">C TYPE</span></div>
+    </div>
+    <div class="header-tabs tab-c">
+      <button class="tab-btn active" onclick="cTab('edit')" id="c-tab-edit">편집</button>
+      <button class="tab-btn" onclick="cTab('preview')" id="c-tab-prev">미리보기</button>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-outline btn-sm" onclick="openModal('c-settings-modal')">⚙ 설정</button>
+      <button class="btn btn-outline btn-sm" onclick="openModal('c-export-modal')">내보내기</button>
+    </div>
+  </header>
+
+  <div id="c-edit-pane">
+    <div class="main-layout">
+      <div class="sidebar">
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">인물</span><button class="btn btn-sm" style="background:#fee500;color:#3c1e1e;border-radius:20px;font-weight:700;font-size:13px;padding:5px 14px" onclick="cOpenAddChar()">+ 추가</button></div>
+          <div class="panel-body"><div class="char-list" id="c-char-list" style="display:flex;flex-direction:column;gap:6px"><div class="no-msg">인물을 추가해 주세요</div></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header"><span class="panel-title">메시지 추가</span></div>
+          <div class="panel-body">
+            <div class="ktype-btns">
+              <button class="ktype-btn active" onclick="cSetMsgType('chat')" id="c-type-chat">채팅</button>
+              <button class="ktype-btn" onclick="cSetMsgType('sys')" id="c-type-sys">날짜/구분</button>
+            </div>
+            <div id="c-chat-composer" style="display:flex;flex-direction:column">
+              <div id="c-sel-char-display"></div>
+              <textarea class="msg-textarea" id="c-msg-input" placeholder="메시지를 입력하세요..." style="min-height:70px"></textarea>
+              <button class="btn btn-dark btn-full" onclick="cAddMsg()">추가 ↓</button>
+              <p class="help-text" style="text-align:center;margin-top:5px">Ctrl+Enter 단축키</p>
+            </div>
+            <div id="c-sys-composer" style="display:none">
+              <input class="sys-msg-input" id="c-sys-input" placeholder="예) 2024년 1월 1일 월요일" />
+              <button class="btn btn-outline btn-full" onclick="cAddSys()">추가 ↓</button>
+            </div>
+          </div>
+        </div>
+      
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-header"><span class="panel-title">📂 카카오톡 TXT 불러오기</span></div>
+        <div class="panel-body">
+          <div class="import-drop-zone kakao" id="c-drop-zone"
+            ondragover="event.preventDefault();this.classList.add('drag-over')"
+            ondragleave="this.classList.remove('drag-over')"
+            ondrop="event.preventDefault();this.classList.remove('drag-over');cHandleImport(event.dataTransfer.files[0])">
+            <input type="file" accept=".txt" onchange="cHandleImport(this.files[0]);this.value=''" />
+            <div class="import-drop-icon">📄</div>
+            <div class="import-drop-text">TXT 파일 드래그 또는 클릭</div>
+            <div class="import-drop-sub">[이름] [오후 6:03] 내용 형식</div>
+          </div>
+          <div class="import-result-banner" id="c-import-banner"></div>
+        </div>
+      </div>
+      </div>
+      <div class="content-area">
+        <div class="kakaochat-wrap">
+          <div class="kakaochat-topbar">
+            <input class="kakaochat-room-input" id="c-room-name" placeholder="채팅방 이름" />
+            <button class="icon-btn" style="color:rgba(255,255,255,.6);font-size:15px" onclick="cClearAll()" title="전체 삭제">🗑</button>
+          </div>
+          <div class="kakaochat-body" id="c-chat-body">
+            <div class="empty-state" id="c-empty-state" style="margin:auto"><div class="empty-icon">💬</div><p>인물을 추가하고 메시지를 작성해 보세요</p></div>
+          </div>
+          <div class="actions-bar">
+            <span style="font-size:13px;color:#8899a6;flex:1" id="c-msg-count">메시지 0개</span>
+            <button class="btn btn-sm btn-danger" onclick="cResetConv()">대화 초기화</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="c-preview-pane" style="display:none">
+    <div class="k-preview-wrap">
+      <div class="k-phone-frame">
+        <div class="k-phone-topbar">
+          <span style="font-size:18px">←</span>
+          <div class="k-phone-title" id="c-prev-room-name">채팅방</div>
+          <span style="font-size:16px;color:rgba(255,255,255,.7)">⋮</span>
+        </div>
+        <div class="k-phone-body" id="c-prev-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- C MODALS -->
+<div class="modal-overlay" id="c-char-modal">
+  <div class="modal" style="width:420px">
+    <div class="modal-title" id="c-char-modal-title">인물 추가</div>
+    <div class="form-group"><label class="form-label">이름</label><input class="input-field" id="c-char-name" placeholder="캐릭터 이름" /></div>
+    <div class="form-group">
+      <label class="form-label">말풍선 위치</label>
+      <div class="pos-toggle">
+        <button class="pos-opt active" data-pos="left" onclick="cSelPos(this)" id="c-pos-left">← 왼쪽 (상대방)</button>
+        <button class="pos-opt" data-pos="right" onclick="cSelPos(this)" id="c-pos-right">오른쪽 (나) →</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">말풍선 색상</label>
+      <div class="bubble-color-presets" id="c-bcolor-presets"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <input type="color" id="c-bcolor-custom" value="#ffffff" oninput="cCustomColor()" style="width:36px;height:36px;border:none;border-radius:8px;cursor:pointer;padding:2px" />
+        <span style="font-size:12px;color:#8899a6">직접 선택</span>
+        <span style="font-size:12px;color:#8899a6;margin-left:auto" id="c-bcolor-preview-text">#ffffff</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">아바타 이미지 (선택, 왼쪽 인물만)</label>
+      <div class="img-src-tabs">
+        <button class="img-src-tab active" onclick="cSetImgSrc('url')" id="c-src-url">🔗 URL</button>
+        <button class="img-src-tab" onclick="cSetImgSrc('file')" id="c-src-file">📁 파일</button>
+      </div>
+      <div id="c-img-url-sec"><input class="input-field" id="c-char-img-url" placeholder="https://..." oninput="cPreviewUrl()" /><p class="url-status" id="c-url-status">URL을 입력하면 미리보기가 표시됩니다</p></div>
+      <div id="c-img-file-sec" style="display:none"><input type="file" id="c-char-img-file" accept="image/*" style="font-size:12px;width:100%;margin-top:4px" onchange="cPreviewFile()" /></div>
+      <div style="margin-top:8px"><img id="c-char-img-preview" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #e6ecf0;display:none" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('c-char-modal')">취소</button>
+      <button class="btn btn-sm" style="background:#fee500;color:#3c1e1e;font-weight:700;border-radius:20px;padding:8px 18px" onclick="cSaveChar()" id="c-char-save-btn">추가</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="c-edit-msg-modal">
+  <div class="modal">
+    <div class="modal-title">메시지 수정</div>
+    <textarea class="msg-textarea" id="c-edit-msg-input" style="min-height:110px"></textarea>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('c-edit-msg-modal')">취소</button><button class="btn btn-sm" style="background:#fee500;color:#3c1e1e;font-weight:700;border-radius:20px;padding:8px 18px" onclick="cSaveEditMsg()">저장</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="c-settings-modal">
+  <div class="modal">
+    <div class="modal-title">⚙ 설정 (C TYPE)</div>
+    <div class="settings-section-title">채팅창 배경색</div>
+    <div class="kbg-opts" id="c-kbg-opts">
+      <button class="kbg-opt active" data-bg="#b2c8df" data-bg2="#9ab5ce" onclick="cSelBg(this)">카카오 블루</button>
+      <button class="kbg-opt" data-bg="#c8e6c9" data-bg2="#a5d6a7" onclick="cSelBg(this)">민트</button>
+      <button class="kbg-opt" data-bg="#f5e6d3" data-bg2="#e8d0b5" onclick="cSelBg(this)">베이지</button>
+      <button class="kbg-opt" data-bg="#dce8f5" data-bg2="#c4d8ed" onclick="cSelBg(this)">하늘</button>
+      <button class="kbg-opt" data-bg="#e8e0f0" data-bg2="#d4c8e8" onclick="cSelBg(this)">라벤더</button>
+      <button class="kbg-opt" data-bg="#f0f0f0" data-bg2="#e0e0e0" onclick="cSelBg(this)">그레이</button>
+    </div>
+    <div class="settings-divider"></div>
+    <div class="settings-section-title">텍스트</div>
+    <div class="settings-row"><span class="settings-label">글씨 크기</span><div class="settings-control"><input type="range" min="12" max="20" step="1" value="14" id="c-cfg-fs" oninput="cApplyCfg()" style="accent-color:#3c1e1e" /></div><span class="settings-value" style="color:#3c1e1e" id="c-cfg-fs-v">14px</span></div>
+    <div class="settings-divider"></div>
+    <div class="settings-section-title">배경</div>
+    <div class="bg-toggle-row">
+      <div><div class="bg-toggle-label">채팅창 배경색 제거</div><div class="bg-toggle-desc">배경을 흰색으로 변경</div></div>
+      <label class="toggle-switch kakao"><input type="checkbox" id="c-nobg" onchange="cApplyCfg()" /><span class="toggle-slider"></span></label>
+    </div>
+    <div class="bg-toggle-row">
+      <div><div class="bg-toggle-label">말풍선 그림자 제거</div><div class="bg-toggle-desc">말풍선 box-shadow 제거</div></div>
+      <label class="toggle-switch kakao"><input type="checkbox" id="c-noshadow" onchange="cApplyCfg()" /><span class="toggle-slider"></span></label>
+    </div>
+    <div style="display:flex;justify-content:space-between">
+      <button class="btn btn-outline btn-sm" onclick="cResetCfg()">기본값으로</button>
+      <button class="btn btn-sm" style="background:#fee500;color:#3c1e1e;font-weight:700;border-radius:20px;padding:8px 18px" onclick="closeModal('c-settings-modal')">완료</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="c-export-modal">
+  <div class="modal">
+    <div class="modal-title">내보내기 (C TYPE)</div>
+    <button class="export-btn-tistory" onclick="cTistoryCopy()"><span class="export-icon">🟠</span><div style="text-align:left"><div>티스토리 코드 복사</div><div style="font-size:12px;font-weight:400;color:#e08020">인라인 스타일 전용 · 붙여넣기 바로 가능</div></div></button>
+    <button class="export-btn" style="" onmouseover="this.style.borderColor='#fee500';this.style.background='#fff9e6'" onmouseout="this.style.borderColor='#e6ecf0';this.style.background='#fff'" onclick="cExportHTML()"><span class="export-icon">🌐</span><div style="text-align:left"><div style="font-weight:700">HTML 파일로 저장</div><div style="font-size:12px;color:#8899a6">브라우저에서 바로 열 수 있는 파일</div></div></button>
+    <button class="export-btn" onmouseover="this.style.borderColor='#fee500';this.style.background='#fff9e6'" onmouseout="this.style.borderColor='#e6ecf0';this.style.background='#fff'" onclick="cExportJSON()"><span class="export-icon">💾</span><div style="text-align:left"><div style="font-weight:700">JSON 백업</div><div style="font-size:12px;color:#8899a6">나중에 불러올 수 있는 데이터</div></div></button>
+    <button class="export-btn" onmouseover="this.style.borderColor='#fee500';this.style.background='#fff9e6'" onmouseout="this.style.borderColor='#e6ecf0';this.style.background='#fff'" onclick="cImportJSON()"><span class="export-icon">📂</span><div style="text-align:left"><div style="font-weight:700">JSON 불러오기</div><div style="font-size:12px;color:#8899a6">저장한 데이터 불러오기</div></div></button>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('c-export-modal')">닫기</button></div>
+  </div>
+</div>
+<input type="file" id="c-json-import" accept=".json" style="display:none" onchange="cLoadJSON()" />
+
+<div class="tistory-copy-toast" id="copy-toast">📋 티스토리 코드가 복사됐어요!</div>
+<!-- ── IMPORT CHARACTER MAPPING MODAL ── -->
+<div class="import-modal-overlay" id="import-map-modal">
+  <div class="import-modal">
+    <div style="font-size:18px;font-weight:700;margin-bottom:6px" id="import-map-title">인물 매핑</div>
+    <div style="font-size:13px;color:#536471;margin-bottom:16px" id="import-map-desc">파일에서 발견된 인물에 색상과 위치를 지정해 주세요.</div>
+    <div id="import-map-table-wrap"></div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+      <button class="btn btn-outline btn-sm" onclick="closeImportModal()">취소</button>
+      <button class="btn btn-dark btn-sm" onclick="applyImport()" id="import-apply-btn">가져오기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════
+   NAVIGATION
+══════════════════════ */
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');s.style.display='none';});
+  const el=document.getElementById('screen-'+id);
+  el.style.display=(id==='home')?'flex':'block';
+  el.classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ══════════════════════
+   MODAL
+══════════════════════ */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});});
+
+/* ══════════════════════
+   SHARED HELPERS
+══════════════════════ */
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function escAttr(s){return s.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function downloadFile(content,filename,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=filename;a.click();}
+function formatText(t){return esc(t).replace(/\(([^)]+)\)/g,'<span class="action-text">($1)</span>');}
+
+/* ══════════════════════
+   A TYPE
+══════════════════════ */
+const A_COLORS=[
+  {bg:'#1d9bf0',t:'#fff'},{bg:'#794bc4',t:'#fff'},{bg:'#e0245e',t:'#fff'},
+  {bg:'#17bf63',t:'#fff'},{bg:'#f45d22',t:'#fff'},{bg:'#ffad1f',t:'#000'},
+  {bg:'#e91e8c',t:'#fff'},{bg:'#00b2a3',t:'#fff'},{bg:'#657786',t:'#fff'},
+  {bg:'#3b5998',t:'#fff'},{bg:'#8b5e3c',t:'#fff'},{bg:'#2e7d32',t:'#fff'},
+];
+let aChars=[],aMsgs=[],aSelChar=null,aEditChar=null,aEditMsgIdx=null,aMsgType='char',aImgData=null,aImgSrc='url';
+let aCfg={fontSize:15,lineHeight:170,font:"'Noto Sans KR',sans-serif",avSize:40,msgPad:8};
+
+function aInitPalette(selBg){
+  const p=document.getElementById('a-color-palette');p.innerHTML='';
+  A_COLORS.forEach((c,i)=>{
+    const d=document.createElement('div');d.className='color-dot';d.style.background=c.bg;d.dataset.idx=i;
+    if(selBg?c.bg===selBg:i===0)d.classList.add('selected');
+    d.onclick=()=>{document.querySelectorAll('#a-color-palette .color-dot').forEach(x=>x.classList.remove('selected'));d.classList.add('selected');};
+    p.appendChild(d);
+  });
+}
+function aGetColor(){const s=document.querySelector('#a-color-palette .color-dot.selected');return s?A_COLORS[+s.dataset.idx]:A_COLORS[0];}
+
+function aSetImgSrc(mode){
+  aImgSrc=mode;
+  document.getElementById('a-src-url').classList.toggle('active',mode==='url');
+  document.getElementById('a-src-file').classList.toggle('active',mode==='file');
+  document.getElementById('a-img-url-sec').style.display=mode==='url'?'block':'none';
+  document.getElementById('a-img-file-sec').style.display=mode==='file'?'block':'none';
+}
+function aPreviewUrl(){
+  const url=document.getElementById('a-char-img-url').value.trim();
+  const st=document.getElementById('a-url-status'),pv=document.getElementById('a-char-img-preview');
+  if(!url){aImgData=null;pv.style.display='none';st.textContent='URL을 입력하면 미리보기가 표시됩니다';st.className='url-status';return;}
+  st.textContent='로딩 중...';st.className='url-status';
+  const img=new Image();
+  img.onload=()=>{aImgData=url;pv.src=url;pv.style.display='block';st.textContent='✓ 이미지 확인됨';st.className='url-status ok';};
+  img.onerror=()=>{aImgData=null;pv.style.display='none';st.textContent='✗ 불러올 수 없습니다';st.className='url-status err';};
+  img.src=url;
+}
+function aPreviewFile(){
+  const f=document.getElementById('a-char-img-file').files[0];
+  if(!f){aImgData=null;document.getElementById('a-char-img-preview').style.display='none';return;}
+  const r=new FileReader();r.onload=e=>{aImgData=e.target.result;const p=document.getElementById('a-char-img-preview');p.src=aImgData;p.style.display='block';};r.readAsDataURL(f);
+}
+
+function aOpenAddChar(){
+  aEditChar=null;aImgData=null;
+  document.getElementById('a-char-modal-title').textContent='인물 추가';
+  document.getElementById('a-char-save-btn').textContent='추가';
+  document.getElementById('a-char-name').value='';
+  document.getElementById('a-char-img-url').value='';
+  document.getElementById('a-char-img-file').value='';
+  document.getElementById('a-char-img-preview').style.display='none';
+  document.getElementById('a-url-status').textContent='URL을 입력하면 미리보기가 표시됩니다';
+  document.getElementById('a-url-status').className='url-status';
+  aSetImgSrc('url');aInitPalette();openModal('a-char-modal');
+}
+function aOpenEditChar(id){
+  const ch=aChars.find(c=>c.id===id);if(!ch)return;
+  aEditChar=id;aImgData=ch.img||null;
+  document.getElementById('a-char-modal-title').textContent='인물 수정';
+  document.getElementById('a-char-save-btn').textContent='저장';
+  document.getElementById('a-char-name').value=ch.name;
+  document.getElementById('a-char-img-file').value='';
+  aSetImgSrc('url');aInitPalette(ch.color.bg);
+  if(ch.img){const p=document.getElementById('a-char-img-preview');p.src=ch.img;p.style.display='block';if(ch.img.startsWith('http')){document.getElementById('a-char-img-url').value=ch.img;document.getElementById('a-url-status').textContent='✓ 현재 이미지';document.getElementById('a-url-status').className='url-status ok';}}
+  else{document.getElementById('a-char-img-preview').style.display='none';document.getElementById('a-char-img-url').value='';}
+  openModal('a-char-modal');
+}
+function aSaveChar(){
+  const name=document.getElementById('a-char-name').value.trim();
+  if(!name){alert('이름을 입력해 주세요');return;}
+  const color=aGetColor(),img=aImgData;
+  if(aEditChar){const ch=aChars.find(c=>c.id===aEditChar);if(ch){ch.name=name;ch.color=color;ch.img=img;}}
+  else{const id='c'+Date.now();aChars.push({id,name,color,img});if(!aSelChar)aSelChar=id;}
+  closeModal('a-char-modal');aRenderCharList();aRenderThread();
+}
+function aDeleteChar(id){
+  if(!confirm('이 인물을 삭제하시겠습니까?'))return;
+  aChars=aChars.filter(c=>c.id!==id);
+  if(aSelChar===id)aSelChar=aChars[0]?.id||null;
+  aRenderCharList();aRenderThread();aUpdateSelDisplay();
+}
+function aSelectChar(id){aSelChar=id;aRenderCharList();aUpdateSelDisplay();}
+
+function aAvHtml(ch){
+  if(ch.img)return`<img src="${ch.img}" onerror="this.style.display='none'" />`;
+  return esc(ch.name[0]);
+}
+function aRenderCharList(){
+  const el=document.getElementById('a-char-list');
+  if(!aChars.length){el.innerHTML='<div class="no-msg">인물을 추가해 주세요</div>';return;}
+  el.innerHTML=aChars.map(ch=>`
+    <div class="char-item${ch.id===aSelChar?' selected':''}" onclick="aSelectChar('${ch.id}')">
+      <div class="char-avatar" style="background:${ch.color.bg};color:${ch.color.t}">${aAvHtml(ch)}</div>
+      <span class="char-name">${esc(ch.name)}</span>
+      <div class="char-actions">
+        <button class="icon-btn" onclick="event.stopPropagation();aOpenEditChar('${ch.id}')">✏️</button>
+        <button class="icon-btn danger" onclick="event.stopPropagation();aDeleteChar('${ch.id}')">🗑</button>
+      </div>
+    </div>`).join('');
+}
+function aUpdateSelDisplay(){
+  const el=document.getElementById('a-sel-char-display');
+  const ch=aChars.find(c=>c.id===aSelChar);
+  if(!ch){el.innerHTML='<div class="no-msg" style="padding:6px 0 10px">인물을 선택하세요</div>';return;}
+  el.innerHTML=`<div class="sel-char-badge"><div class="mini-av" style="background:${ch.color.bg};color:${ch.color.t}">${aAvHtml(ch)}</div>${esc(ch.name)}의 대사</div>`;
+}
+
+function aSetMsgType(t){
+  aMsgType=t;
+  document.getElementById('a-type-char').classList.toggle('active',t==='char');
+  document.getElementById('a-type-sys').classList.toggle('active',t==='sys');
+  document.getElementById('a-char-composer').style.display=t==='char'?'flex':'none';
+  document.getElementById('a-sys-composer').style.display=t==='sys'?'block':'none';
+}
+function aAddMsg(){
+  if(!aSelChar){alert('인물을 먼저 선택해 주세요');return;}
+  const text=document.getElementById('a-msg-input').value.trim();
+  if(!text){alert('대사를 입력해 주세요');return;}
+  aMsgs.push({type:'char',charId:aSelChar,text,id:'m'+Date.now()});
+  document.getElementById('a-msg-input').value='';aRenderThread();
+}
+function aAddSys(){
+  const text=document.getElementById('a-sys-input').value.trim();
+  if(!text)return;
+  aMsgs.push({type:'sys',text,id:'m'+Date.now()});
+  document.getElementById('a-sys-input').value='';aRenderThread();
+}
+function aDeleteMsg(i){aMsgs.splice(i,1);aRenderThread();}
+function aOpenEditMsg(i){aEditMsgIdx=i;document.getElementById('a-edit-msg-input').value=aMsgs[i].text;openModal('a-edit-msg-modal');}
+function aSaveEditMsg(){if(aEditMsgIdx===null)return;aMsgs[aEditMsgIdx].text=document.getElementById('a-edit-msg-input').value;closeModal('a-edit-msg-modal');aRenderThread();}
+function aMoveUp(i){if(i<=0)return;[aMsgs[i],aMsgs[i-1]]=[aMsgs[i-1],aMsgs[i]];aRenderThread();}
+function aMoveDown(i){if(i>=aMsgs.length-1)return;[aMsgs[i],aMsgs[i+1]]=[aMsgs[i+1],aMsgs[i]];aRenderThread();}
+function aClearAll(){if(!confirm('모든 대사를 삭제하시겠습니까?'))return;aMsgs=[];aRenderThread();}
+function aResetConv(){if(!confirm('대화 내용을 초기화하시겠습니까?\n(인물 정보는 유지됩니다)'))return;aMsgs=[];document.getElementById('a-thread-title').value='';aRenderThread();}
+
+function aRenderThread(){
+  const body=document.getElementById('a-thread-body'),empty=document.getElementById('a-empty-state');
+  document.getElementById('a-msg-count').textContent=`메시지 ${aMsgs.length}개`;
+  if(!aMsgs.length){body.innerHTML='';body.appendChild(empty);return;}
+  body.innerHTML=aMsgs.map((msg,i)=>{
+    if(msg.type==='sys')return`<div class="thread-sys-msg"><span>${esc(msg.text)}</span><span class="sys-actions"><button class="icon-btn" onclick="aOpenEditMsg(${i})">✏️</button><button class="icon-btn danger" onclick="aDeleteMsg(${i})">🗑</button></span></div>`;
+    const ch=aChars.find(c=>c.id===msg.charId);if(!ch)return'';
+    return`<div class="thread-msg"><div class="thread-msg-left"><div class="thread-av" style="background:${ch.color.bg};color:${ch.color.t}">${aAvHtml(ch)}</div><div class="thread-line"></div></div><div class="thread-msg-right"><div class="thread-msg-name" style="color:${ch.color.bg}">${esc(ch.name)}<div class="thread-msg-actions"><button class="icon-btn" onclick="aMoveUp(${i})">↑</button><button class="icon-btn" onclick="aMoveDown(${i})">↓</button><button class="icon-btn" onclick="aOpenEditMsg(${i})">✏️</button><button class="icon-btn danger" onclick="aDeleteMsg(${i})">🗑</button></div></div><div class="thread-msg-text">${formatText(msg.text)}</div></div></div>`;
+  }).join('');
+}
+
+function aTab(tab){
+  document.querySelectorAll('#screen-a .tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&tab==='edit')||(i===1&&tab==='preview')));
+  document.getElementById('a-edit-pane').style.display=tab==='edit'?'block':'none';
+  document.getElementById('a-preview-pane').style.display=tab==='preview'?'block':'none';
+  if(tab==='preview')aRenderPreview();
+}
+function aRenderPreview(){
+  const title=document.getElementById('a-thread-title').value||'제목 없음';
+  document.getElementById('a-prev-title').textContent=title;
+  const now=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  const chars=[...new Set(aMsgs.filter(m=>m.type==='char').map(m=>m.charId))].map(id=>aChars.find(c=>c.id===id)?.name).filter(Boolean);
+  document.getElementById('a-prev-meta').textContent=`${now} · ${chars.join(', ')} · ${aMsgs.filter(m=>m.type==='char').length}개`;
+  const thread=document.getElementById('a-prev-thread');
+  if(!aMsgs.length){thread.innerHTML='<div class="empty-state"><p>대사가 없습니다</p></div>';return;}
+  thread.innerHTML=aMsgs.map((msg,i)=>{
+    if(msg.type==='sys')return`<div class="a-preview-sys">${esc(msg.text)}</div>`;
+    const ch=aChars.find(c=>c.id===msg.charId);if(!ch)return'';
+    return`<div class="a-preview-msg"><div class="a-preview-left"><div class="preview-av" style="background:${ch.color.bg};color:${ch.color.t}">${aAvHtml(ch)}</div><div class="a-preview-line"></div></div><div class="a-preview-right"><div class="a-preview-name" style="color:${ch.color.bg}">${esc(ch.name)}</div><div class="a-preview-text">${formatText(msg.text)}</div></div></div>`;
+  }).join('');
+}
+
+/* A SETTINGS */
+function aApplyCfg(){
+  aCfg.fontSize=+document.getElementById('a-cfg-fs').value;
+  aCfg.lineHeight=+document.getElementById('a-cfg-lh').value;
+  aCfg.msgPad=+document.getElementById('a-cfg-mp').value;
+  aCfg.noBg=document.getElementById('a-nobg').checked;
+  aCfg.noBorder=document.getElementById('a-noborder').checked;
+  document.getElementById('a-cfg-fs-v').textContent=aCfg.fontSize+'px';
+  document.getElementById('a-cfg-lh-v').textContent=(aCfg.lineHeight/100).toFixed(2);
+  document.getElementById('a-cfg-mp-v').textContent=aCfg.msgPad+'px';
+  const av=aCfg.avSize,avf=Math.round(av*.38);
+  const s=document.getElementById('a-cfg-style')||(()=>{const el=document.createElement('style');el.id='a-cfg-style';document.head.appendChild(el);return el;})();
+  const bgCss=aCfg.noBg?`#screen-a #a-edit-pane,#screen-a #a-preview-pane{background:#fff!important}#screen-a .thread-body,#screen-a #a-prev-thread,.a-preview-thread{background:#fff!important}`:``; 
+  const borderCss=aCfg.noBorder?`.thread-view,.a-preview-thread{border:none!important;box-shadow:none!important;border-radius:0!important}`:``; 
+  s.textContent=bgCss+borderCss+`.thread-msg{padding:${aCfg.msgPad}px 24px!important}.thread-msg-name{height:${av}px!important;line-height:${av}px!important;font-size:${aCfg.fontSize+1}px!important}.thread-msg-text{font-size:${aCfg.fontSize}px!important;line-height:${aCfg.lineHeight/100}!important;font-family:${aCfg.font}!important}.thread-av{width:${av}px!important;height:${av}px!important;font-size:${avf}px!important}.thread-msg-left{width:${av}px!important}.a-preview-msg{padding:${aCfg.msgPad}px 24px!important}.a-preview-name{height:${av}px!important;line-height:${av}px!important}.a-preview-text{font-size:${aCfg.fontSize}px!important;line-height:${aCfg.lineHeight/100}!important;font-family:${aCfg.font}!important}.preview-av{width:${av}px!important;height:${av}px!important;font-size:${avf}px!important}.a-preview-left{width:${av}px!important}`;
+}
+function aSelFont(el){document.querySelectorAll('.font-opt-a').forEach(b=>b.classList.remove('active'));el.classList.add('active');aCfg.font=el.dataset.font;aApplyCfg();}
+function aSelAv(el){document.querySelectorAll('.av-size-opt').forEach(b=>b.classList.remove('active'));el.classList.add('active');aCfg.avSize=+el.dataset.av;aApplyCfg();}
+function aResetCfg(){aCfg={fontSize:15,lineHeight:170,font:"'Noto Sans KR',sans-serif",avSize:40,msgPad:8,noBg:false,noBorder:false};document.getElementById('a-cfg-fs').value=15;document.getElementById('a-cfg-lh').value=170;document.getElementById('a-cfg-mp').value=8;document.getElementById('a-nobg').checked=false;document.getElementById('a-noborder').checked=false;document.querySelectorAll('.font-opt-a').forEach((b,i)=>b.classList.toggle('active',i===0));document.querySelectorAll('.av-size-opt').forEach((b,i)=>b.classList.toggle('active',i===1));aApplyCfg();}
+
+/* A EXPORT */
+function aExportHTML(){
+  const title=document.getElementById('a-thread-title').value||'역극 백업';
+  const now=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  const chars=[...new Set(aMsgs.filter(m=>m.type==='char').map(m=>m.charId))].map(id=>aChars.find(c=>c.id===id)?.name).filter(Boolean);
+  const meta=`${now} · ${chars.join(', ')} · ${aMsgs.filter(m=>m.type==='char').length}개`;
+  const msgHtml=aMsgs.map((msg,i)=>{
+    if(msg.type==='sys')return`<div style="padding:10px 24px;text-align:center;font-size:13px;color:#8899a6;font-style:italic;display:flex;align-items:center;gap:10px"><span style="flex:1;height:1px;background:#e6ecf0;display:block"></span>${esc(msg.text)}<span style="flex:1;height:1px;background:#e6ecf0;display:block"></span></div>`;
+    const ch=aChars.find(c=>c.id===msg.charId);if(!ch)return'';
+    const av=ch.img?`<img src="${ch.img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`:`<span>${esc(ch.name[0])}</span>`;
+    const sz=aCfg.avSize;
+    return`<div style="display:flex;gap:12px;padding:${aCfg.msgPad}px 24px"><div style="display:flex;flex-direction:column;align-items:center;width:${sz}px;flex-shrink:0"><div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${ch.color.bg};color:${ch.color.t};display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz*.38)}px;font-weight:700;overflow:hidden">${av}</div><div style="width:2px;flex:1;background:#cfd9de;margin-top:3px;min-height:10px"></div></div><div style="flex:1"><div style="font-weight:700;font-size:${aCfg.fontSize+1}px;color:${ch.color.bg};height:${sz}px;line-height:${sz}px">${esc(ch.name)}</div><div style="font-size:${aCfg.fontSize}px;line-height:${aCfg.lineHeight/100};font-family:${aCfg.font};white-space:pre-wrap;word-break:break-word;padding-bottom:4px">${formatText(msg.text)}</div></div></div>`;
+  }).join('');
+  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Noto Sans KR',sans-serif;background:#f7f9fa;color:#0f1419;padding:24px 16px}.action-text{color:#536471;font-style:italic}.w{max-width:640px;margin:0 auto}.t{font-size:22px;font-weight:700;margin-bottom:4px}.m{font-size:13px;color:#8899a6;margin-bottom:20px}.th{background:#fff;border:1px solid #e6ecf0;border-radius:16px;overflow:hidden;padding:16px 0}</style></head><body><div class="w"><div class="t">${esc(title)}</div><div class="m">${meta}</div><div class="th">${msgHtml}</div></div>
+
+
+
+</body></html>`;
+  downloadFile(html,title.replace(/[^a-zA-Z0-9가-힣_]/g,'_')+'_A.html','text/html');
+  closeModal('a-export-modal');
+}
+function aExportJSON(){
+  downloadFile(JSON.stringify({title:document.getElementById('a-thread-title').value,characters:aChars,messages:aMsgs,exportedAt:new Date().toISOString()},null,2),'roleplay_a.json','application/json');
+  closeModal('a-export-modal');
+}
+function aImportJSON(){document.getElementById('a-json-import').click();closeModal('a-export-modal');}
+function aLoadJSON(){
+  const f=document.getElementById('a-json-import').files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.characters)aChars=d.characters;if(d.messages)aMsgs=d.messages;if(d.title)document.getElementById('a-thread-title').value=d.title;aSelChar=aChars[0]?.id||null;aRenderCharList();aRenderThread();aUpdateSelDisplay();alert('불러오기 완료!');}catch{alert('파일을 읽을 수 없습니다');}};r.readAsText(f);
+}
+
+/* ══════════════════════
+   B TYPE
+══════════════════════ */
+let bBlocks=[],bEditingIdx=null,bNewType='chapter';
+let bCfg={fontSize:15,lineHeight:190,paraGap:14,font:"'Noto Serif KR',serif",pagePad:48,indent:'1em'};
+const B_PLACEHOLDERS={chapter:'챕터 제목을 입력하세요\n예) [1일차] 망상은 무망하다.',section:'소제목을 입력하세요',body:'본문 내용을 입력하세요\n여러 줄도 가능합니다.'};
+
+function bSetType(t){
+  bNewType=t;
+  ['chapter','section','body'].forEach(x=>document.getElementById('bt-'+x).classList.toggle('active',x===t));
+  document.getElementById('b-block-input').placeholder=B_PLACEHOLDERS[t];
+}
+function bAddBlock(){
+  const text=document.getElementById('b-block-input').value.trim();
+  if(!text){alert('내용을 입력해 주세요');return;}
+  bBlocks.push({id:'b'+Date.now(),type:bNewType,text});
+  document.getElementById('b-block-input').value='';bRenderAll();
+}
+function bDeleteBlock(i){bBlocks.splice(i,1);if(bEditingIdx===i)bEditingIdx=null;else if(bEditingIdx>i)bEditingIdx--;bRenderAll();}
+function bMoveUp(i){if(i<=0)return;[bBlocks[i],bBlocks[i-1]]=[bBlocks[i-1],bBlocks[i]];bRenderAll();}
+function bMoveDown(i){if(i>=bBlocks.length-1)return;[bBlocks[i],bBlocks[i+1]]=[bBlocks[i+1],bBlocks[i]];bRenderAll();}
+function bStartEdit(i){bEditingIdx=i;bRenderCanvas();}
+function bSaveEdit(i){const ta=document.getElementById('b-inline-'+i);if(ta)bBlocks[i].text=ta.value;bEditingIdx=null;bRenderAll();}
+function bCancelEdit(){bEditingIdx=null;bRenderCanvas();}
+function bResetAll(){if(!confirm('모든 내용을 초기화하시겠습니까?'))return;bBlocks=[];document.getElementById('b-book-title').value='';document.getElementById('b-book-author').value='';bEditingIdx=null;bRenderAll();}
+
+function bRenderAll(){bRenderBlockList();bRenderCanvas();bUpdateCounts();}
+function bRenderBlockList(){
+  const el=document.getElementById('b-block-list');
+  if(!bBlocks.length){el.innerHTML='<div class="no-msg">블록을 추가해 주세요</div>';return;}
+  const labels={chapter:'챕터',section:'소제목',body:'본문'};
+  const badges={chapter:'badge-chapter',section:'badge-section',body:'badge-body'};
+  el.innerHTML=bBlocks.map((b,i)=>`<div class="block-item${bEditingIdx===i?' active-edit':''}" onclick="bStartEdit(${i})"><span class="block-type-badge ${badges[b.type]}">${labels[b.type]}</span><span class="block-preview-text">${esc(b.text.split('\n')[0])}</span><div class="block-actions"><button class="icon-btn" onclick="event.stopPropagation();bMoveUp(${i})">↑</button><button class="icon-btn" onclick="event.stopPropagation();bMoveDown(${i})">↓</button><button class="icon-btn danger" onclick="event.stopPropagation();bDeleteBlock(${i})">🗑</button></div></div>`).join('');
+}
+function bRenderCanvas(){
+  const canvas=document.getElementById('b-book-canvas'),empty=document.getElementById('b-empty-canvas');
+  if(!bBlocks.length){canvas.innerHTML='';canvas.appendChild(empty);return;}
+  const cls={chapter:'block-chapter',section:'block-section',body:'block-body'};
+  canvas.innerHTML=bBlocks.map((b,i)=>{
+    if(bEditingIdx===i)return`<div class="block-render editing"><textarea id="b-inline-${i}" class="block-edit-area" rows="4">${escAttr(b.text)}</textarea><div class="block-edit-actions"><button class="btn btn-outline btn-sm" onclick="bCancelEdit()">취소</button><button class="btn btn-purple btn-sm" onclick="bSaveEdit(${i})">저장</button></div></div>`;
+    return`<div class="block-render" onclick="bStartEdit(${i})" title="클릭해서 수정"><div class="${cls[b.type]}">${esc(b.text)}</div></div>`;
+  }).join('');
+}
+function bUpdateCounts(){
+  const total=bBlocks.reduce((s,b)=>s+b.text.length,0);
+  document.getElementById('b-word-count').textContent=total.toLocaleString()+'자';
+  document.getElementById('b-block-count').textContent=bBlocks.length+'개';
+  document.getElementById('b-block-count2').textContent='블록 '+bBlocks.length+'개';
+}
+
+function bTab(tab){
+  document.getElementById('b-tab-edit').classList.toggle('active',tab==='edit');
+  document.getElementById('b-tab-prev').classList.toggle('active',tab==='preview');
+  document.getElementById('b-edit-pane').style.display=tab==='edit'?'block':'none';
+  document.getElementById('b-preview-pane').style.display=tab==='preview'?'block':'none';
+  if(tab==='preview')bRenderPreview();
+}
+function bRenderPreview(){
+  const title=document.getElementById('b-book-title').value||'제목 없음';
+  const author=document.getElementById('b-book-author').value;
+  const page=document.getElementById('b-page-book');
+  let html=`<div class="page-book-title">${esc(title)}</div>`;
+  if(author)html+=`<div class="page-book-meta">${esc(author)}</div>`;
+  html+=bBlocks.map(b=>{
+    if(b.type==='chapter')return`<div class="page-chapter">${esc(b.text)}</div>`;
+    if(b.type==='section')return`<div class="page-section">${esc(b.text)}</div>`;
+    return`<div class="page-body">${esc(b.text)}</div>`;
+  }).join('');
+  page.innerHTML=html;
+}
+
+/* B SETTINGS */
+function bApplyCfg(){
+  bCfg.fontSize=+document.getElementById('b-cfg-fs').value;
+  bCfg.lineHeight=+document.getElementById('b-cfg-lh').value;
+  bCfg.paraGap=+document.getElementById('b-cfg-pg').value;
+  bCfg.pagePad=+document.getElementById('b-cfg-pp').value;
+  bCfg.noBg=document.getElementById('b-nobg').checked;
+  bCfg.noShadow=document.getElementById('b-noshadow').checked;
+  document.getElementById('b-cfg-fs-v').textContent=bCfg.fontSize+'px';
+  document.getElementById('b-cfg-lh-v').textContent=(bCfg.lineHeight/100).toFixed(2);
+  document.getElementById('b-cfg-pg-v').textContent=bCfg.paraGap+'px';
+  document.getElementById('b-cfg-pp-v').textContent=bCfg.pagePad+'px';
+  const r=document.documentElement;
+  r.style.setProperty('--page-font',bCfg.font);
+  r.style.setProperty('--page-size',bCfg.fontSize+'px');
+  r.style.setProperty('--page-lh',bCfg.lineHeight/100);
+  r.style.setProperty('--page-gap',bCfg.paraGap+'px');
+  r.style.setProperty('--page-pad',bCfg.pagePad+'px');
+  r.style.setProperty('--page-indent',bCfg.indent);
+  const bs=document.getElementById('b-cfg-style')||(()=>{const el=document.createElement('style');el.id='b-cfg-style';document.head.appendChild(el);return el;})();
+  const bgCss=bCfg.noBg?`.page-book,.book-canvas{background:#fff!important}.b-preview-outer{background:#fff!important}#screen-b #b-edit-pane{background:#fff!important}`:``; 
+  const shadowCss=bCfg.noShadow?`.page-book{box-shadow:none!important;border:none!important;border-radius:0!important}.book-editor-wrap{box-shadow:none!important}`:``; 
+  bs.textContent=bgCss+shadowCss;
+}
+function bSelFont(el){document.querySelectorAll('.font-opt-b').forEach(b=>b.classList.remove('active'));el.classList.add('active');bCfg.font=el.dataset.font;bApplyCfg();}
+function bSelIndent(el){document.querySelectorAll('.indent-opt').forEach(b=>b.classList.remove('active'));el.classList.add('active');bCfg.indent=el.dataset.indent;bApplyCfg();}
+function bResetCfg(){bCfg={fontSize:15,lineHeight:190,paraGap:14,font:"'Noto Serif KR',serif",pagePad:48,indent:'1em',noBg:false,noShadow:false};document.getElementById('b-cfg-fs').value=15;document.getElementById('b-cfg-lh').value=190;document.getElementById('b-cfg-pg').value=14;document.getElementById('b-cfg-pp').value=48;document.getElementById('b-nobg').checked=false;document.getElementById('b-noshadow').checked=false;document.querySelectorAll('.font-opt-b').forEach((b,i)=>b.classList.toggle('active',i===0));document.querySelectorAll('.indent-opt').forEach((b,i)=>b.classList.toggle('active',i===0));bApplyCfg();}
+
+/* B EXPORT */
+function bExportHTML(){
+  const title=document.getElementById('b-book-title').value||'소설 백업';
+  const author=document.getElementById('b-book-author').value;
+  const bodyHtml=bBlocks.map(b=>{
+    if(b.type==='chapter')return`<div class="ch">${esc(b.text)}</div>`;
+    if(b.type==='section')return`<div class="sc">${esc(b.text)}</div>`;
+    return`<div class="bd">${esc(b.text)}</div>`;
+  }).join('');
+  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Nanum+Myeongjo:wght@400;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#f7f9fa;padding:32px 16px;font-family:'Noto Serif KR',serif}.w{max-width:680px;margin:0 auto;background:#fffef9;border:1px solid #ddd6c8;border-radius:4px;padding:${bCfg.pagePad}px;box-shadow:0 2px 20px rgba(0,0,0,.06),2px 2px 0 #e8e0d0,4px 4px 0 #ddd6c8;min-height:600px;font-size:${bCfg.fontSize}px;line-height:${bCfg.lineHeight/100};color:#1a1208}.bt{font-size:${bCfg.fontSize*1.7}px;font-weight:700;text-align:center;padding-bottom:20px;border-bottom:1px solid #ddd6c8;margin-bottom:28px}.bm{font-size:${bCfg.fontSize*.78}px;color:#8b7a5e;text-align:center;margin-top:-20px;margin-bottom:28px}.ch{font-size:${bCfg.fontSize*1.25}px;font-weight:700;margin-top:2em;margin-bottom:.7em;line-height:1.4}.sc{font-size:${bCfg.fontSize*1.05}px;font-weight:600;margin-top:1.4em;margin-bottom:.5em;color:#3a2e1a}.bd{margin-bottom:${bCfg.paraGap}px;word-break:keep-all;white-space:pre-wrap;text-indent:${bCfg.indent}}</style></head><body><div class="w"><div class="bt">${esc(title)}</div>${author?`<div class="bm">${esc(author)}</div>`:''}${bodyHtml}</div></body></html>`;
+  downloadFile(html,title.replace(/[^a-zA-Z0-9가-힣_]/g,'_')+'_B.html','text/html');
+  closeModal('b-export-modal');
+}
+function bExportJSON(){downloadFile(JSON.stringify({title:document.getElementById('b-book-title').value,author:document.getElementById('b-book-author').value,blocks:bBlocks,cfg:bCfg,exportedAt:new Date().toISOString()},null,2),'novel_b.json','application/json');closeModal('b-export-modal');}
+function bImportJSON(){document.getElementById('b-json-import').click();closeModal('b-export-modal');}
+function bLoadJSON(){
+  const f=document.getElementById('b-json-import').files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.blocks)bBlocks=d.blocks;if(d.title)document.getElementById('b-book-title').value=d.title;if(d.author)document.getElementById('b-book-author').value=d.author;bRenderAll();alert('불러오기 완료!');}catch{alert('파일을 읽을 수 없습니다');}};r.readAsText(f);
+}
+
+/* ══════════════════════
+   KEYBOARD SHORTCUTS
+══════════════════════ */
+document.getElementById('a-msg-input').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')aAddMsg();});
+document.getElementById('b-block-input').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')bAddBlock();});
+
+/* ══════════════════════
+   INIT
+══════════════════════ */
+// A demo
+aChars=[{id:'c1',name:'유저1',color:{bg:'#1d9bf0',t:'#fff'},img:null},{id:'c2',name:'유저2',color:{bg:'#794bc4',t:'#fff'},img:null}];
+aMsgs=[
+  {id:'m1',type:'char',charId:'c1',text:'(오래된 창고 앞에서 걸음을 멈추며) 여기가 맞아요? 지도상으론 이 근처인데...'},
+  {id:'m2',type:'char',charId:'c2',text:'(담벼락에 기대어 팔짱을 끼고 있다가 고개를 든다.) 늦었네. 한 시간은 기다렸어.'},
+  {id:'m3',type:'char',charId:'c1',text:'미안해요. 버스를 두 번이나 놓쳐서. (숨을 고르며) 근데 왜 하필 여기예요?'},
+  {id:'m4',type:'char',charId:'c2',text:'아무도 안 오니까. (낡은 문을 밀어 열며) 들어와.'},
+  {id:'m5',type:'sys',text:'--- 창고 내부 ---'},
+  {id:'m6',type:'char',charId:'c1',text:'(먼지 쌓인 박스들을 훑어보며) 오래됐네요, 여기. 자주 와요?'},
+];
+aSelChar='c1';
+document.getElementById('a-thread-title').value='유저1 × 유저2 역극';
+aRenderCharList();aRenderThread();aUpdateSelDisplay();
+
+// B demo
+bBlocks=[
+  {id:'b1',type:'chapter',text:'[1일차] 망상은 무망하다.'},
+  {id:'b2',type:'body',text:'꿈을 꾸었다.'},
+  {id:'b3',type:'body',text:'그곳은 풀잎이 스치기만 해도 시원한 바람소리가 재잘거리듯 울려 퍼지는 드넓은 초원이었고, 사방이 끝없는 바다로 둘러싸인 섬도 있었으며, 무엇보다도 마력을 부릴 수 있는 \'마법사\'들이 모여 사는 아우룸이라 불리는 학교가 세워져 있었다.'},
+  {id:'b4',type:'body',text:'그곳은 내가 오래도록 갈망해온 자유와도 같았다. 현실에서는 언제나 질서가 우선되었고, 눈을 번쩍 뜨이게 하는 능력도, 가슴을 조여오는 위기도 존재하지 않았다.'},
+  {id:'b5',type:'section',text:'그러나, 이 세계에서는 달랐다.'},
+  {id:'b6',type:'body',text:'누군가는 하늘을 날아올랐고, 또 다른 누군가는 바다 위를 걸었으며, 신비로운 책을 탐독하거나 마치 이야기의 주인공이 된 듯 머릿속에 숨겨진 지식을 흡수하기도 했다.'},
+];
+document.getElementById('b-book-title').value='망상은 무망하다';
+document.getElementById('b-book-author').value='유저1';
+bRenderAll();
+bApplyCfg();
+
+/* ══════════════════════
+   C TYPE — KAKAO
+══════════════════════ */
+const C_BUBBLE_PRESETS=['#ffffff','#fee500','#ffd1dc','#d4f1c4','#c4e0f9','#e8d5f5','#ffe0b2','#b2dfdb'];
+let cChars=[],cMsgs=[],cSelChar=null,cEditChar=null,cEditMsgIdx=null,cMsgType='chat';
+let cImgData=null,cImgSrc='url',cBubbleColor='#ffffff',cPos='left';
+let cCfg={fontSize:14,bgColor:'#b2c8df',bgColor2:'#9ab5ce'};
+
+function cInitBcolorPresets(sel){
+  const p=document.getElementById('c-bcolor-presets');p.innerHTML='';
+  C_BUBBLE_PRESETS.forEach(col=>{
+    const d=document.createElement('div');d.className='bcolor-dot'+(col===sel?' selected':'');
+    d.style.background=col;d.style.border='2px solid '+(col==='#ffffff'?'#ccc':'transparent');
+    d.onclick=()=>{cBubbleColor=col;document.querySelectorAll('.bcolor-dot').forEach(x=>x.classList.remove('selected'));d.classList.add('selected');document.getElementById('c-bcolor-custom').value=col;document.getElementById('c-bcolor-preview-text').textContent=col;};
+    p.appendChild(d);
+  });
+  document.getElementById('c-bcolor-custom').value=sel||'#ffffff';
+  document.getElementById('c-bcolor-preview-text').textContent=sel||'#ffffff';
+}
+function cCustomColor(){
+  const col=document.getElementById('c-bcolor-custom').value;
+  cBubbleColor=col;
+  document.getElementById('c-bcolor-preview-text').textContent=col;
+  document.querySelectorAll('.bcolor-dot').forEach(d=>{d.classList.toggle('selected',d.style.background===col||d.style.backgroundColor===col);});
+}
+function cSelPos(el){document.querySelectorAll('.pos-opt').forEach(b=>b.classList.remove('active'));el.classList.add('active');cPos=el.dataset.pos;}
+function cSetImgSrc(mode){
+  cImgSrc=mode;
+  document.getElementById('c-src-url').classList.toggle('active',mode==='url');
+  document.getElementById('c-src-file').classList.toggle('active',mode==='file');
+  document.getElementById('c-img-url-sec').style.display=mode==='url'?'block':'none';
+  document.getElementById('c-img-file-sec').style.display=mode==='file'?'block':'none';
+}
+function cPreviewUrl(){
+  const url=document.getElementById('c-char-img-url').value.trim();
+  const st=document.getElementById('c-url-status'),pv=document.getElementById('c-char-img-preview');
+  if(!url){cImgData=null;pv.style.display='none';st.textContent='URL을 입력하면 미리보기가 표시됩니다';st.className='url-status';return;}
+  const img=new Image();
+  img.onload=()=>{cImgData=url;pv.src=url;pv.style.display='block';st.textContent='✓ 확인됨';st.className='url-status ok';};
+  img.onerror=()=>{cImgData=null;pv.style.display='none';st.textContent='✗ 불러올 수 없습니다';st.className='url-status err';};
+  img.src=url;
+}
+function cPreviewFile(){
+  const f=document.getElementById('c-char-img-file').files[0];
+  if(!f){cImgData=null;document.getElementById('c-char-img-preview').style.display='none';return;}
+  const r=new FileReader();r.onload=e=>{cImgData=e.target.result;const p=document.getElementById('c-char-img-preview');p.src=cImgData;p.style.display='block';};r.readAsDataURL(f);
+}
+
+// auto text color from bg
+function cAutoTextColor(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return(r*299+g*587+b*114)/1000>128?'#1a1208':'#ffffff';
+}
+
+function cOpenAddChar(){
+  cEditChar=null;cImgData=null;cPos='left';cBubbleColor='#ffffff';
+  document.getElementById('c-char-modal-title').textContent='인물 추가';
+  document.getElementById('c-char-save-btn').textContent='추가';
+  document.getElementById('c-char-name').value='';
+  document.getElementById('c-char-img-url').value='';
+  document.getElementById('c-char-img-preview').style.display='none';
+  document.getElementById('c-url-status').textContent='URL을 입력하면 미리보기가 표시됩니다';
+  document.getElementById('c-url-status').className='url-status';
+  document.getElementById('c-pos-left').classList.add('active');
+  document.getElementById('c-pos-right').classList.remove('active');
+  cSetImgSrc('url');cInitBcolorPresets('#ffffff');openModal('c-char-modal');
+}
+function cOpenEditChar(id){
+  const ch=cChars.find(c=>c.id===id);if(!ch)return;
+  cEditChar=id;cImgData=ch.img||null;cPos=ch.pos;cBubbleColor=ch.bubbleColor;
+  document.getElementById('c-char-modal-title').textContent='인물 수정';
+  document.getElementById('c-char-save-btn').textContent='저장';
+  document.getElementById('c-char-name').value=ch.name;
+  document.getElementById('c-char-img-file').value='';
+  document.getElementById('c-pos-left').classList.toggle('active',ch.pos==='left');
+  document.getElementById('c-pos-right').classList.toggle('active',ch.pos==='right');
+  cSetImgSrc('url');cInitBcolorPresets(ch.bubbleColor);
+  if(ch.img){const p=document.getElementById('c-char-img-preview');p.src=ch.img;p.style.display='block';if(ch.img.startsWith('http'))document.getElementById('c-char-img-url').value=ch.img;}
+  else{document.getElementById('c-char-img-preview').style.display='none';document.getElementById('c-char-img-url').value='';}
+  openModal('c-char-modal');
+}
+function cSaveChar(){
+  const name=document.getElementById('c-char-name').value.trim();
+  if(!name){alert('이름을 입력해 주세요');return;}
+  const img=cImgData;
+  if(cEditChar){const ch=cChars.find(c=>c.id===cEditChar);if(ch){ch.name=name;ch.pos=cPos;ch.bubbleColor=cBubbleColor;ch.img=img;}}
+  else{const id='cc'+Date.now();cChars.push({id,name,pos:cPos,bubbleColor:cBubbleColor,img});if(!cSelChar)cSelChar=id;}
+  closeModal('c-char-modal');cRenderCharList();cRenderChat();
+}
+function cDeleteChar(id){
+  if(!confirm('이 인물을 삭제하시겠습니까?'))return;
+  cChars=cChars.filter(c=>c.id!==id);
+  if(cSelChar===id)cSelChar=cChars[0]?.id||null;
+  cRenderCharList();cRenderChat();cUpdateSelDisplay();
+}
+function cSelectChar(id){cSelChar=id;cRenderCharList();cUpdateSelDisplay();}
+
+function cAvHtml(ch,size){
+  const sz=size||36;
+  if(ch.img)return`<img src="${ch.img}" style="width:${sz}px;height:${sz}px;border-radius:50%;object-fit:cover" onerror="this.style.display='none'" />`;
+  const bg=ch.bubbleColor==='#ffffff'?'#888':ch.bubbleColor;
+  const tc=cAutoTextColor(bg==='#888'?'#888888':bg);
+  return`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${bg};color:${tc};display:flex;align-items:center;justify-content:center;font-size:${Math.round(sz*.38)}px;font-weight:700">${esc(ch.name[0])}</div>`;
+}
+
+function cRenderCharList(){
+  const el=document.getElementById('c-char-list');
+  if(!cChars.length){el.innerHTML='<div class="no-msg">인물을 추가해 주세요</div>';return;}
+  el.innerHTML=cChars.map(ch=>`
+    <div class="kchar-item${ch.id===cSelChar?' selected':''}" onclick="cSelectChar('${ch.id}')">
+      <div class="kchar-bubble-dot" style="background:${ch.bubbleColor};${ch.bubbleColor==='#ffffff'?'border:1.5px solid #ccc':''}"></div>
+      <span class="kchar-name">${esc(ch.name)}</span>
+      <span class="kchar-pos-badge ${ch.pos==='left'?'kchar-pos-l':'kchar-pos-r'}">${ch.pos==='left'?'← 왼':' 오 →'}</span>
+      <div class="kchar-actions">
+        <button class="icon-btn" onclick="event.stopPropagation();cOpenEditChar('${ch.id}')">✏️</button>
+        <button class="icon-btn danger" onclick="event.stopPropagation();cDeleteChar('${ch.id}')">🗑</button>
+      </div>
+    </div>`).join('');
+}
+function cUpdateSelDisplay(){
+  const el=document.getElementById('c-sel-char-display');
+  const ch=cChars.find(c=>c.id===cSelChar);
+  if(!ch){el.innerHTML='<div class="no-msg" style="padding:6px 0 10px">인물을 선택하세요</div>';return;}
+  const tc=cAutoTextColor(ch.bubbleColor);
+  el.innerHTML=`<div class="k-sel-badge" style="background:${ch.bubbleColor};color:${tc}">${esc(ch.name)} ${ch.pos==='left'?'(왼쪽)':'(오른쪽)'}</div>`;
+}
+
+function cSetMsgType(t){
+  cMsgType=t;
+  document.getElementById('c-type-chat').classList.toggle('active',t==='chat');
+  document.getElementById('c-type-sys').classList.toggle('active',t==='sys');
+  document.getElementById('c-chat-composer').style.display=t==='chat'?'flex':'none';
+  document.getElementById('c-sys-composer').style.display=t==='sys'?'block':'none';
+}
+function cAddMsg(){
+  if(!cSelChar){alert('인물을 먼저 선택해 주세요');return;}
+  const text=document.getElementById('c-msg-input').value.trim();
+  if(!text){alert('메시지를 입력해 주세요');return;}
+  const now=new Date();
+  const time=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  cMsgs.push({type:'chat',charId:cSelChar,text,time,id:'cm'+Date.now()});
+  document.getElementById('c-msg-input').value='';cRenderChat();
+}
+function cAddSys(){
+  const text=document.getElementById('c-sys-input').value.trim();
+  if(!text)return;
+  cMsgs.push({type:'sys',text,id:'cm'+Date.now()});
+  document.getElementById('c-sys-input').value='';cRenderChat();
+}
+function cDeleteMsg(i){cMsgs.splice(i,1);cRenderChat();}
+function cOpenEditMsg(i){cEditMsgIdx=i;document.getElementById('c-edit-msg-input').value=cMsgs[i].text;openModal('c-edit-msg-modal');}
+function cSaveEditMsg(){if(cEditMsgIdx===null)return;cMsgs[cEditMsgIdx].text=document.getElementById('c-edit-msg-input').value;closeModal('c-edit-msg-modal');cRenderChat();}
+function cMoveUp(i){if(i<=0)return;[cMsgs[i],cMsgs[i-1]]=[cMsgs[i-1],cMsgs[i]];cRenderChat();}
+function cMoveDown(i){if(i>=cMsgs.length-1)return;[cMsgs[i],cMsgs[i+1]]=[cMsgs[i+1],cMsgs[i]];cRenderChat();}
+function cClearAll(){if(!confirm('모든 메시지를 삭제하시겠습니까?'))return;cMsgs=[];cRenderChat();}
+function cResetConv(){if(!confirm('대화를 초기화하시겠습니까?'))return;cMsgs=[];document.getElementById('c-room-name').value='';cRenderChat();}
+
+function cBuildBubbleRow(msg,i,isPreview){
+  const ch=cChars.find(c=>c.id===msg.charId);if(!ch)return'';
+  const isRight=ch.pos==='right';
+  const tc=cAutoTextColor(ch.bubbleColor);
+  const avHtml=ch.pos==='left'?`<div class="kmsg-av">${cAvHtml(ch,36)}</div>`:'';
+  const nameHtml=ch.pos==='left'?`<div class="kmsg-name">${esc(ch.name)}</div>`:'';
+  const bubbleText=esc(msg.text).replace(/\(([^)]+)\)/g,'<span class="action-text">($1)</span>');
+  if(isPreview){
+    return`<div class="kmsg-row${isRight?' right':''}">
+      ${avHtml}
+      <div class="kmsg-body">
+        ${nameHtml}
+        <div class="kmsg-bubble ${isRight?'right':'left'}" style="background:${ch.bubbleColor};color:${tc};font-size:${cCfg.fontSize}px">${bubbleText}</div>
+      </div>
+      <div class="kmsg-meta"><div class="kmsg-time">${msg.time||''}</div></div>
+    </div>`;
+  }
+  return`<div class="kmsg-row${isRight?' right':''}">
+    ${avHtml}
+    <div class="kmsg-body">
+      ${nameHtml}
+      <div class="kmsg-bubble ${isRight?'right':'left'}" style="background:${ch.bubbleColor};color:${tc};font-size:${cCfg.fontSize}px">${bubbleText}</div>
+    </div>
+    <div class="kmsg-meta">
+      <div class="kmsg-time">${msg.time||''}</div>
+      <div class="kmsg-bubble-actions">
+        <button class="kbub-icon-btn" onclick="cMoveUp(${i})" title="위">↑</button>
+        <button class="kbub-icon-btn" onclick="cMoveDown(${i})" title="아래">↓</button>
+        <button class="kbub-icon-btn" onclick="cOpenEditMsg(${i})" title="수정">✏</button>
+        <button class="kbub-icon-btn danger" onclick="cDeleteMsg(${i})" title="삭제">✕</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function cRenderChat(){
+  const body=document.getElementById('c-chat-body'),empty=document.getElementById('c-empty-state');
+  document.getElementById('c-msg-count').textContent=`메시지 ${cMsgs.length}개`;
+  if(!cMsgs.length){body.innerHTML='';body.appendChild(empty);return;}
+  body.innerHTML=cMsgs.map((msg,i)=>{
+    if(msg.type==='sys')return`<div class="ksys-msg"><div class="ksys-wrap"><span>${esc(msg.text)}</span><button class="ksys-del" onclick="cDeleteMsg(${i})">✕</button></div></div>`;
+    return cBuildBubbleRow(msg,i,false);
+  }).join('');
+}
+
+/* C TAB */
+function cTab(tab){
+  document.getElementById('c-tab-edit').classList.toggle('active',tab==='edit');
+  document.getElementById('c-tab-prev').classList.toggle('active',tab==='preview');
+  document.getElementById('c-edit-pane').style.display=tab==='edit'?'block':'none';
+  document.getElementById('c-preview-pane').style.display=tab==='preview'?'block':'none';
+  if(tab==='preview')cRenderPreview();
+}
+function cRenderPreview(){
+  const room=document.getElementById('c-room-name').value||'채팅방';
+  document.getElementById('c-prev-room-name').textContent=room;
+  const body=document.getElementById('c-prev-body');
+  if(!cMsgs.length){body.innerHTML='<div class="empty-state" style="margin:auto"><p>메시지가 없습니다</p></div>';return;}
+  body.innerHTML=cMsgs.map((msg,i)=>{
+    if(msg.type==='sys')return`<div class="ksys-msg"><span>${esc(msg.text)}</span></div>`;
+    return cBuildBubbleRow(msg,i,true);
+  }).join('');
+}
+
+/* C SETTINGS */
+function cSelBg(el){document.querySelectorAll('.kbg-opt').forEach(b=>b.classList.remove('active'));el.classList.add('active');cCfg.bgColor=el.dataset.bg;cCfg.bgColor2=el.dataset.bg2;cApplyCfg();}
+function cApplyCfg(){
+  cCfg.fontSize=+document.getElementById('c-cfg-fs').value;
+  cCfg.noBg=document.getElementById('c-nobg').checked;
+  cCfg.noShadow=document.getElementById('c-noshadow').checked;
+  document.getElementById('c-cfg-fs-v').textContent=cCfg.fontSize+'px';
+  const bg=cCfg.noBg?'#ffffff':cCfg.bgColor;
+  const bg2=cCfg.noBg?'#ffffff':cCfg.bgColor2;
+  document.documentElement.style.setProperty('--kbg',bg);
+  document.documentElement.style.setProperty('--kbg2',bg2);
+  const cs=document.getElementById('c-cfg-style')||(()=>{const el=document.createElement('style');el.id='c-cfg-style';document.head.appendChild(el);return el;})();
+  const shadowCss=cCfg.noShadow?`.kmsg-bubble{box-shadow:none!important}`:``; 
+  cs.textContent=shadowCss;
+}
+function cResetCfg(){cCfg={fontSize:14,bgColor:'#b2c8df',bgColor2:'#9ab5ce',noBg:false,noShadow:false};document.getElementById('c-cfg-fs').value=14;document.getElementById('c-nobg').checked=false;document.getElementById('c-noshadow').checked=false;document.querySelectorAll('.kbg-opt').forEach((b,i)=>b.classList.toggle('active',i===0));cApplyCfg();}
+
+/* C EXPORT */
+function cExportHTML(){
+  const room=document.getElementById('c-room-name').value||'카카오톡 백업';
+  const msgHtml=cMsgs.map((msg,i)=>{
+    if(msg.type==='sys')return`<div style="display:flex;align-items:center;gap:10px;margin:10px 0;font-size:11px;color:rgba(0,0,0,.45)"><span style="flex:1;height:1px;background:rgba(0,0,0,.12)"></span>${esc(msg.text)}<span style="flex:1;height:1px;background:rgba(0,0,0,.12)"></span></div>`;
+    const ch=cChars.find(c=>c.id===msg.charId);if(!ch)return'';
+    const isRight=ch.pos==='right';const tc=cAutoTextColor(ch.bubbleColor);
+    const avHtml=ch.pos==='left'?(ch.img?`<img src="${ch.img}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;align-self:flex-start;border:1.5px solid rgba(0,0,0,.08)" />`:`<div style="width:36px;height:36px;border-radius:50%;background:${ch.bubbleColor==='#ffffff'?'#888':ch.bubbleColor};color:${tc};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;align-self:flex-start">${esc(ch.name[0])}</div>`):'';
+    const bubbleText=esc(msg.text).replace(/\(([^)]+)\)/g,'<span style="font-style:italic;opacity:.75">($1)</span>');
+    const brL=isRight?'18px 18px 4px 18px':'4px 18px 18px 18px';
+    return`<div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:2px;${isRight?'flex-direction:row-reverse':''}">
+      ${avHtml}
+      <div style="display:flex;flex-direction:column;max-width:68%;${isRight?'align-items:flex-end':''}">
+        ${ch.pos==='left'?`<div style="font-size:11px;font-weight:600;color:#1a1208;margin-bottom:3px;padding-left:2px">${esc(ch.name)}</div>`:''}
+        <div style="padding:9px 13px;border-radius:${brL};background:${ch.bubbleColor};color:${tc};font-size:${cCfg.fontSize}px;line-height:1.55;word-break:break-word;white-space:pre-wrap;box-shadow:0 1px 2px rgba(0,0,0,.1)">${bubbleText}</div>
+      </div>
+      <div style="font-size:10px;color:rgba(0,0,0,.4);align-self:flex-end">${msg.time||''}</div>
+    </div>`;
+  }).join('');
+  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(room)}</title><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#f7f9fa;padding:24px 16px;font-family:'Noto Sans KR',sans-serif}.w{max-width:420px;margin:0 auto;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.15)}.top{background:#3c1e1e;padding:14px 20px;font-size:16px;font-weight:700;color:#fff;text-align:center}.body{background:${cCfg.bgColor};padding:16px 12px;min-height:400px;display:flex;flex-direction:column;gap:4px}</style></head><body><div class="w"><div class="top">${esc(room)}</div><div class="body">${msgHtml}</div></div></body></html>`;
+  downloadFile(html,room.replace(/[^a-zA-Z0-9가-힣_]/g,'_')+'_C.html','text/html');
+  closeModal('c-export-modal');
+}
+function cExportJSON(){downloadFile(JSON.stringify({room:document.getElementById('c-room-name').value,characters:cChars,messages:cMsgs,cfg:cCfg,exportedAt:new Date().toISOString()},null,2),'kakao_c.json','application/json');closeModal('c-export-modal');}
+function cImportJSON(){document.getElementById('c-json-import').click();closeModal('c-export-modal');}
+function cLoadJSON(){
+  const f=document.getElementById('c-json-import').files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{try{const d=JSON.parse(e.target.result);if(d.characters)cChars=d.characters;if(d.messages)cMsgs=d.messages;if(d.room)document.getElementById('c-room-name').value=d.room;cSelChar=cChars[0]?.id||null;cRenderCharList();cRenderChat();cUpdateSelDisplay();alert('불러오기 완료!');}catch{alert('파일을 읽을 수 없습니다');}};r.readAsText(f);
+}
+
+/* C keyboard shortcut */
+document.getElementById('c-msg-input').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')cAddMsg();});
+
+/* C DEMO */
+cChars=[
+  {id:'cc1',name:'유저1',pos:'left',bubbleColor:'#ffffff',img:null},
+  {id:'cc2',name:'유저2',pos:'right',bubbleColor:'#fee500',img:null},
+];
+cMsgs=[
+  {id:'cm0',type:'sys',text:'2024년 1월 15일 월요일'},
+  {id:'cm1',type:'chat',charId:'cc1',text:'(오래된 창고 앞에서 걸음을 멈추며) 여기가 맞아요? 지도상으론 이 근처인데...',time:'14:22'},
+  {id:'cm2',type:'chat',charId:'cc2',text:'늦었네. 한 시간은 기다렸어.',time:'14:23'},
+  {id:'cm3',type:'chat',charId:'cc1',text:'미안해요. 버스를 두 번이나 놓쳐서. (숨을 고르며)',time:'14:23'},
+  {id:'cm4',type:'chat',charId:'cc2',text:'아무도 안 오니까. 들어와.',time:'14:24'},
+  {id:'cm5',type:'sys',text:'창고 내부'},
+  {id:'cm6',type:'chat',charId:'cc1',text:'(먼지 쌓인 박스들을 훑어보며) 오래됐네요, 여기. 자주 와요?',time:'14:25'},
+];
+cSelChar='cc2';
+document.getElementById('c-room-name').value='유저1 유저2';
+cRenderCharList();cRenderChat();cUpdateSelDisplay();
+
+
+/* ══════════════════════
+   TISTORY EXPORT HELPERS
+══════════════════════ */
+function showToast(){
+  const t=document.getElementById('copy-toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+function copyToClipboard(text){
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(showToast);}
+  else{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);showToast();}
+}
+
+/* ── A TYPE TISTORY ── */
+function aTistoryCopy(){
+  const title=document.getElementById('a-thread-title').value||'역극 백업';
+  const now=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
+  const chars=[...new Set(aMsgs.filter(m=>m.type==='char').map(m=>m.charId))].map(id=>aChars.find(c=>c.id===id)?.name).filter(Boolean);
+  const meta=`${now} · ${chars.join(', ')} · ${aMsgs.filter(m=>m.type==='char').length}개`;
+  const av=aCfg.avSize||40;
+
+  const rows=aMsgs.map(msg=>{
+    if(msg.type==='sys'){
+      return `<div style="display:flex;align-items:center;gap:10px;margin:8px 0;font-size:12px;color:#8899a6;font-style:italic"><span style="flex:1;height:1px;background:#e6ecf0;display:block"></span><span>${esc(msg.text)}</span><span style="flex:1;height:1px;background:#e6ecf0;display:block"></span></div>`;
+    }
+    const ch=aChars.find(c=>c.id===msg.charId);if(!ch)return'';
+    const avInner=ch.img?`<img src="${ch.img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" />`:`<span style="font-size:${Math.round(av*.38)}px;font-weight:700;color:${ch.color.t}">${esc(ch.name[0])}</span>`;
+    const bubText=esc(msg.text).replace(/\(([^)]+)\)/g,'<em style="color:#536471;font-style:italic">($1)</em>');
+    return `<div style="display:flex;gap:12px;padding:8px 20px">
+  <div style="display:flex;flex-direction:column;align-items:center;width:${av}px;flex-shrink:0">
+    <div style="width:${av}px;height:${av}px;border-radius:50%;background:${ch.color.bg};display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">${avInner}</div>
+    <div style="width:2px;flex:1;background:#cfd9de;margin-top:3px;min-height:12px"></div>
+  </div>
+  <div style="flex:1;min-width:0">
+    <div style="font-weight:700;font-size:15px;color:${ch.color.bg};height:${av}px;line-height:${av}px;overflow:hidden">${esc(ch.name)}</div>
+    <div style="font-size:${aCfg.fontSize||15}px;line-height:${(aCfg.lineHeight||170)/100};color:#0f1419;white-space:pre-wrap;word-break:break-word;padding-bottom:4px;font-family:'Noto Sans KR',AppleGothic,sans-serif">${bubText}</div>
+  </div>
+</div>`;
+  }).join('\n');
+
+  const snippet=`<div style="max-width:600px;margin:0 auto;font-family:'Noto Sans KR',AppleGothic,sans-serif;line-height:1.6">
+<h2 style="font-size:20px;font-weight:700;margin:0 0 4px;color:#0f1419">${esc(title)}</h2>
+<p style="font-size:12px;color:#8899a6;margin:0 0 16px">${meta}</p>
+<div style="border:1px solid #e6ecf0;border-radius:16px;overflow:hidden;background:#fff;padding:16px 0">
+${rows}
+</div>
+</div>`;
+  copyToClipboard(snippet);
+  closeModal('a-export-modal');
+}
+
+/* ── B TYPE TISTORY ── */
+function bTistoryCopy(){
+  const title=document.getElementById('b-book-title').value||'소설 백업';
+  const author=document.getElementById('b-book-author').value;
+  const fs=bCfg.fontSize||15;
+  const lh=(bCfg.lineHeight||190)/100;
+  const pg=bCfg.paraGap||14;
+  const pp=bCfg.pagePad||48;
+  const ind=bCfg.indent||'1em';
+  const font=bCfg.font||"'Noto Serif KR',serif";
+  const bgColor=bCfg.noBg?'#fff':'#fffef9';
+  const border=bCfg.noShadow?'none':'1px solid #ddd6c8';
+  const shadow=bCfg.noShadow?'none':'0 2px 16px rgba(0,0,0,.06),2px 2px 0 #e8e0d0,4px 4px 0 #ddd6c8';
+
+  const rows=bBlocks.map(b=>{
+    if(b.type==='chapter')return`<div style="font-family:${font};font-size:${Math.round(fs*1.25)}px;font-weight:700;margin:1.6em 0 .6em;line-height:1.4;color:#1a1208">${esc(b.text)}</div>`;
+    if(b.type==='section')return`<div style="font-family:${font};font-size:${Math.round(fs*1.05)}px;font-weight:600;margin:1.2em 0 .4em;line-height:1.5;color:#3a2e1a">${esc(b.text)}</div>`;
+    return`<div style="font-family:${font};font-size:${fs}px;line-height:${lh};margin-bottom:${pg}px;word-break:keep-all;white-space:pre-wrap;text-indent:${ind};color:#1a1208">${esc(b.text)}</div>`;
+  }).join('\n');
+
+  const snippet=`<div style="max-width:640px;margin:0 auto;background:${bgColor};border:${border};border-radius:4px;padding:${pp}px;box-shadow:${shadow};font-family:${font};font-size:${fs}px;line-height:${lh};color:#1a1208">
+<div style="font-size:${Math.round(fs*1.7)}px;font-weight:700;text-align:center;padding-bottom:20px;border-bottom:1px solid #ddd6c8;margin-bottom:28px;font-family:${font}">${esc(title)}</div>
+${author?`<div style="font-size:${Math.round(fs*.78)}px;color:#8b7a5e;text-align:center;margin-top:-20px;margin-bottom:28px">${esc(author)}</div>`:''}
+${rows}
+</div>`;
+  copyToClipboard(snippet);
+  closeModal('b-export-modal');
+}
+
+/* ── C TYPE TISTORY ── */
+function cTistoryCopy(){
+  const room=document.getElementById('c-room-name').value||'카카오톡';
+  const bg=cCfg.noBg?'#ffffff':cCfg.bgColor;
+  const fs=cCfg.fontSize||14;
+
+  const rows=cMsgs.map(msg=>{
+    if(msg.type==='sys'){
+      return`<div style="display:flex;align-items:center;gap:10px;margin:10px 0;font-size:11px;color:rgba(0,0,0,.45);font-family:'Noto Sans KR',AppleGothic,sans-serif"><span style="flex:1;height:1px;background:rgba(0,0,0,.15);display:block"></span><span>${esc(msg.text)}</span><span style="flex:1;height:1px;background:rgba(0,0,0,.15);display:block"></span></div>`;
+    }
+    const ch=cChars.find(c=>c.id===msg.charId);if(!ch)return'';
+    const isRight=ch.pos==='right';
+    const tc=cAutoTextColor(ch.bubbleColor);
+    const avInner=ch.img?`<img src="${ch.img}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:block" />`:`<div style="width:36px;height:36px;border-radius:50%;background:${ch.bubbleColor==='#ffffff'?'#888':ch.bubbleColor};color:${tc};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">${esc(ch.name[0])}</div>`;
+    const br=isRight?'18px 18px 4px 18px':'4px 18px 18px 18px';
+    const shadow=cCfg.noShadow?'none':'0 1px 2px rgba(0,0,0,.1)';
+    const bubText=esc(msg.text).replace(/\(([^)]+)\)/g,'<em style="font-style:italic;opacity:.75">($1)</em>');
+    if(isRight){
+      return`<div style="display:flex;flex-direction:row-reverse;align-items:flex-end;gap:6px;margin-bottom:4px">
+  <div style="max-width:68%;display:flex;flex-direction:column;align-items:flex-end">
+    <div style="padding:9px 13px;border-radius:${br};background:${ch.bubbleColor};color:${tc};font-size:${fs}px;line-height:1.55;word-break:break-word;white-space:pre-wrap;box-shadow:${shadow};font-family:'Noto Sans KR',AppleGothic,sans-serif">${bubText}</div>
+  </div>
+  <div style="font-size:10px;color:rgba(0,0,0,.4);align-self:flex-end;white-space:nowrap">${msg.time||''}</div>
+</div>`;
+    }
+    return`<div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:4px">
+  ${ch.pos==='left'?`<div style="flex-shrink:0;align-self:flex-start">${avInner}</div>`:''}
+  <div style="max-width:68%;display:flex;flex-direction:column">
+    <div style="font-size:11px;font-weight:600;color:#1a1208;margin-bottom:3px;font-family:'Noto Sans KR',AppleGothic,sans-serif">${esc(ch.name)}</div>
+    <div style="padding:9px 13px;border-radius:${br};background:${ch.bubbleColor};color:${tc};font-size:${fs}px;line-height:1.55;word-break:break-word;white-space:pre-wrap;box-shadow:${shadow};font-family:'Noto Sans KR',AppleGothic,sans-serif">${bubText}</div>
+  </div>
+  <div style="font-size:10px;color:rgba(0,0,0,.4);align-self:flex-end;white-space:nowrap">${msg.time||''}</div>
+</div>`;
+  }).join('\n');
+
+  const snippet=`<div style="max-width:400px;margin:0 auto;border-radius:16px;overflow:hidden;font-family:'Noto Sans KR',AppleGothic,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.12)">
+<div style="background:#3c1e1e;padding:14px 20px;font-size:15px;font-weight:700;color:#fff;text-align:center">${esc(room)}</div>
+<div style="background:${bg};padding:16px 12px;display:flex;flex-direction:column;gap:2px;min-height:200px">
+${rows}
+</div>
+</div>`;
+  copyToClipboard(snippet);
+  closeModal('c-export-modal');
+}
+
+
+/* ══════════════════════════════════════
+   TXT IMPORT — SHARED
+══════════════════════════════════════ */
+const AUTO_COLORS=[{"bg": "#1d9bf0", "t": "#fff"}, {"bg": "#794bc4", "t": "#fff"}, {"bg": "#e0245e", "t": "#fff"}, {"bg": "#17bf63", "t": "#fff"}, {"bg": "#f45d22", "t": "#fff"}, {"bg": "#00b2a3", "t": "#fff"}, {"bg": "#e91e8c", "t": "#fff"}, {"bg": "#3b5998", "t": "#fff"}, {"bg": "#8b5e3c", "t": "#fff"}, {"bg": "#2e7d32", "t": "#fff"}];
+let _importPending=null; // {type:'a'|'c', parsed}
+
+function closeImportModal(){
+  document.getElementById('import-map-modal').classList.remove('open');
+  _importPending=null;
+}
+document.getElementById('import-map-modal').addEventListener('click',e=>{if(e.target.id==='import-map-modal')closeImportModal();});
+
+function showBanner(id,msg,isOk){
+  const el=document.getElementById(id);
+  el.textContent=msg;el.className='import-result-banner '+(isOk?'ok':'err');
+  setTimeout(()=>el.classList.remove('ok','err'),5000);
+}
+
+/* ── color swatch html ── */
+function colorSwatchHTML(colors){
+  return colors.map((c,i)=>`<span class="import-char-color-dot" style="background:${c.bg};cursor:pointer" data-cidx="${i}" title="${c.bg}"></span>`).join('');
+}
+
+/* ══════════════════════════════════════
+   C TYPE — KakaoTalk TXT parser
+══════════════════════════════════════ */
+function cHandleImport(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const text=e.target.result;
+      const parsed=parseKakaoTxt(text);
+      if(!parsed.messages.length){showBanner('c-import-banner','메시지를 찾을 수 없습니다.',false);return;}
+      openImportMapModal('c',parsed);
+    }catch(err){showBanner('c-import-banner','파일 파싱 오류: '+err.message,false);}
+  };
+  reader.readAsText(file,'utf-8');
+  // reset input so same file can be re-selected
+  document.querySelector('#c-drop-zone input[type=file]').value='';
+}
+
+function parseKakaoTxt(text){
+  const lines=text.split(/\r?\n/);
+  // Kakao line: [이름] [오전/오후 H:MM] 내용
+  const msgRe=/^\[(.+?)\]\s*\[(오전|오후)\s*(\d{1,2}:\d{2})\]\s*(.*)/;
+  // Date separator: --------- YYYY년 M월 D일 요일 ---------  OR just the date line
+  const dateRe=/^-*\s*(\d{4}년\s*\d{1,2}월\s*\d{1,2}일[^-]*)\s*-*$/;
+
+  const messages=[];
+  const names=new Set();
+  let i=0;
+  while(i<lines.length){
+    const line=lines[i].trim();
+    // date separator
+    const dm=line.match(dateRe);
+    if(dm&&line.includes('년')){
+      const d=dm[1].trim();
+      if(d) messages.push({type:'sys',text:d});
+      i++;continue;
+    }
+    const mm=line.match(msgRe);
+    if(mm){
+      const [,name,ampm,time,content]=mm;
+      names.add(name);
+      // convert 오전/오후 to actual time
+      let [h,m]=time.split(':').map(Number);
+      if(ampm==='오후'&&h!==12)h+=12;
+      if(ampm==='오전'&&h===12)h=0;
+      const tstr=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      // multi-line: collect continuation lines
+      let body=content;
+      while(i+1<lines.length){
+        const next=lines[i+1].trim();
+        if(!next){i++;continue;} // skip blank
+        if(next.match(msgRe)||next.match(dateRe))break;
+        body+='\n'+next;
+        i++;
+      }
+      messages.push({type:'chat',name,time:tstr,text:body.trim()});
+    }
+    i++;
+  }
+  return {names:[...names],messages};
+}
+
+/* ══════════════════════════════════════
+   A TYPE — Prose roleplay TXT parser
+   Format: 이름 -A12, 오후 03:55 (or 오전)
+           내용 텍스트
+══════════════════════════════════════ */
+function aHandleImport(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const text=e.target.result;
+      const parsed=parseProseTxt(text);
+      if(!parsed.messages.length){showBanner('a-import-banner','메시지를 찾을 수 없습니다.',false);return;}
+      openImportMapModal('a',parsed);
+    }catch(err){showBanner('a-import-banner','파일 파싱 오류: '+err.message,false);}
+  };
+  reader.readAsText(file,'utf-8');
+  document.querySelector('#a-drop-zone input[type=file]').value='';
+}
+
+function parseProseTxt(text){
+  const lines=text.split(/\r?\n/);
+  // Header: 이름 -identifier, 오전/오후 HH:MM
+  // Also handle plain: 이름 오전/오후 HH:MM  or  [이름] [오전/오후 H:MM] 내용 (kakao style in A)
+  const headerRe=/^(.+?)(?:\s+-[A-Za-z0-9]+)?,\s*(오전|오후)\s*(\d{1,2}:\d{2})\s*$/;
+  const kakaoRe=/^\[(.+?)\]\s*\[(오전|오후)\s*(\d{1,2}:\d{2})\]\s*(.*)/;
+  const sysRe=/^[-=*]+\s*(.+?)\s*[-=*]+$/;
+
+  const messages=[];
+  const names=new Set();
+  let i=0;
+  while(i<lines.length){
+    const line=lines[i].trim();
+    if(!line){i++;continue;}
+
+    // kakao-style fallback
+    const km=line.match(kakaoRe);
+    if(km){
+      const [,name,ampm,time,content]=km;
+      names.add(name);
+      let [h,mn]=time.split(':').map(Number);
+      if(ampm==='오후'&&h!==12)h+=12;
+      if(ampm==='오전'&&h===12)h=0;
+      const tstr=`${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`;
+      let body=content;
+      while(i+1<lines.length){
+        const nx=lines[i+1].trim();
+        if(!nx||nx.match(kakaoRe)||nx.match(headerRe))break;
+        body+='\n'+nx;i++;
+      }
+      messages.push({type:'char',name,time:tstr,text:body.trim()});
+      i++;continue;
+    }
+
+    // sys separator
+    const sm=line.match(sysRe);
+    if(sm){messages.push({type:'sys',text:sm[1]});i++;continue;}
+
+    // prose header
+    const hm=line.match(headerRe);
+    if(hm){
+      const [,name,ampm,time]=hm;
+      names.add(name.trim());
+      let [h,mn]=time.split(':').map(Number);
+      if(ampm==='오후'&&h!==12)h+=12;
+      if(ampm==='오전'&&h===12)h=0;
+      const tstr=`${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`;
+      // collect body lines until next header or blank
+      let body='';
+      i++;
+      while(i<lines.length){
+        const nx=lines[i].trim();
+        if(!nx){i++;break;}
+        if(nx.match(headerRe)||nx.match(kakaoRe)||nx.match(sysRe))break;
+        body+=( body?'\n':'')+nx;
+        i++;
+      }
+      if(body)messages.push({type:'char',name:name.trim(),time:tstr,text:body});
+      continue;
+    }
+    i++;
+  }
+  return {names:[...names],messages};
+}
+
+/* ══════════════════════════════════════
+   B TYPE — plain text paragraph import
+══════════════════════════════════════ */
+function bHandleImport(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const text=e.target.result;
+      const blocks=parsePlainTxtToBlocks(text);
+      if(!blocks.length){showBanner('b-import-banner','내용을 찾을 수 없습니다.',false);return;}
+      if(bBlocks.length&&!confirm('기존 내용을 지우고 가져올까요?'))return;
+      bBlocks=blocks;
+      bEditingIdx=null;
+      bRenderAll();
+      showBanner('b-import-banner',`✓ ${blocks.length}개 블록 불러왔어요`,true);
+    }catch(err){showBanner('b-import-banner','파싱 오류: '+err.message,false);}
+  };
+  reader.readAsText(file,'utf-8');
+  document.querySelector('#b-drop-zone input[type=file]').value='';
+}
+
+function parsePlainTxtToBlocks(text){
+  // chapter: line starting with [ or # or ■ or ▣ or === or 숫자.
+  const chapterRe=/^(\[|#|■|▣|===|\d+\.|Chapter|chapter|CHAPTER|제\d+)/;
+  // section: line ending in . and <60 chars and no newlines
+  const sectionRe=/^[^.\n]{4,50}[.!?…]?$/;
+
+  const paragraphs=text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
+  const blocks=[];
+  paragraphs.forEach(p=>{
+    const firstLine=p.split('\n')[0].trim();
+    if(chapterRe.test(firstLine)){
+      // treat first line as chapter, rest as body
+      blocks.push({id:'bi'+Date.now()+Math.random(),type:'chapter',text:firstLine});
+      const rest=p.split('\n').slice(1).join('\n').trim();
+      if(rest)blocks.push({id:'bi'+Date.now()+Math.random(),type:'body',text:rest});
+    } else {
+      blocks.push({id:'bi'+Date.now()+Math.random(),type:'body',text:p});
+    }
+  });
+  return blocks;
+}
+
+/* ══════════════════════════════════════
+   SHARED: Character mapping modal
+══════════════════════════════════════ */
+function openImportMapModal(type,parsed){
+  _importPending={type,parsed};
+  const modal=document.getElementById('import-map-modal');
+  const title=document.getElementById('import-map-title');
+  const desc=document.getElementById('import-map-desc');
+  const wrap=document.getElementById('import-map-table-wrap');
+  const applyBtn=document.getElementById('import-apply-btn');
+
+  title.textContent=type==='c'?'카카오톡 인물 매핑':'역극 인물 매핑';
+  desc.textContent=`파일에서 ${parsed.names.length}명 발견됐어요. 색상과 위치를 지정해 주세요.`;
+  applyBtn.style.background=type==='c'?'#3c1e1e':type==='a'?'#1d9bf0':'#794bc4';
+
+  // Build table
+  let tableHtml=`<table class="import-char-table">
+    <thead><tr>
+      <th>이름</th>
+      <th>색상</th>
+      ${type==='c'?'<th>위치</th>':''}
+    </tr></thead><tbody>`;
+
+  parsed.names.forEach((name,idx)=>{
+    const col=AUTO_COLORS[idx%AUTO_COLORS.length];
+    const colorOpts=AUTO_COLORS.map((c,i)=>`<option value="${i}" ${i===idx%AUTO_COLORS.length?'selected':''} style="background:${c.bg}">${c.bg}</option>`).join('');
+    tableHtml+=`<tr>
+      <td style="font-weight:600">${esc(name)}</td>
+      <td>
+        <div class="color-select-wrap">
+          <span class="import-char-color-dot" id="icdot-${idx}" style="background:${col.bg}"></span>
+          <select onchange="document.getElementById('icdot-${idx}').style.background=AUTO_COLORS[+this.value].bg" id="icsel-${idx}">${colorOpts}</select>
+        </div>
+      </td>
+      ${type==='c'?`<td><select id="icpos-${idx}"><option value="left">← 왼쪽</option><option value="right" ${idx>0?'selected':''}>오른쪽 →</option></select></td>`:''}
+    </tr>`;
+  });
+  tableHtml+=`</tbody></table>`;
+  wrap.innerHTML=tableHtml;
+  modal.classList.add('open');
+}
+
+function applyImport(){
+  if(!_importPending)return;
+  const {type,parsed}=_importPending;
+  const nameToId={};
+
+  if(type==='c'){
+    // Build new chars or match existing
+    parsed.names.forEach((name,idx)=>{
+      let existing=cChars.find(c=>c.name===name);
+      if(!existing){
+        const colorIdx=+document.getElementById('icsel-'+idx).value;
+        const pos=document.getElementById('icpos-'+idx).value;
+        const col=AUTO_COLORS[colorIdx];
+        const id='cc'+Date.now()+idx;
+        cChars.push({id,name,pos,bubbleColor:pos==='right'?'#fee500':'#ffffff',img:null});
+        // override with selected color as avatar bg
+        cChars[cChars.length-1]._importColor=col;
+        existing=cChars[cChars.length-1];
+      }
+      nameToId[name]=existing.id;
+    });
+    // append messages
+    const newMsgs=parsed.messages.map(m=>{
+      if(m.type==='sys')return{type:'sys',text:m.text,id:'cm'+Date.now()+Math.random()};
+      const charId=nameToId[m.name];
+      if(!charId)return null;
+      return{type:'chat',charId,text:m.text,time:m.time,id:'cm'+Date.now()+Math.random()};
+    }).filter(Boolean);
+    if(cMsgs.length&&confirm('기존 대화에 이어 붙일까요? (취소 = 대체)')){
+      cMsgs=[...cMsgs,...newMsgs];
+    } else { cMsgs=newMsgs; }
+    if(!cSelChar&&cChars.length)cSelChar=cChars[0].id;
+    cRenderCharList();cRenderChat();cUpdateSelDisplay();
+    showBanner('c-import-banner',`✓ ${newMsgs.filter(m=>m.type==='chat').length}개 메시지 불러왔어요`,true);
+
+  } else if(type==='a'){
+    parsed.names.forEach((name,idx)=>{
+      let existing=aChars.find(c=>c.name===name);
+      if(!existing){
+        const colorIdx=+document.getElementById('icsel-'+idx).value;
+        const col=AUTO_COLORS[colorIdx];
+        const id='c'+Date.now()+idx;
+        aChars.push({id,name,color:{bg:col.bg,t:col.t},img:null});
+        existing=aChars[aChars.length-1];
+      }
+      nameToId[name]=existing.id;
+    });
+    const newMsgs=parsed.messages.map(m=>{
+      if(m.type==='sys')return{type:'sys',text:m.text,id:'m'+Date.now()+Math.random()};
+      const charId=nameToId[m.name];if(!charId)return null;
+      return{type:'char',charId,text:m.text,id:'m'+Date.now()+Math.random()};
+    }).filter(Boolean);
+    if(aMsgs.length&&confirm('기존 대사에 이어 붙일까요? (취소 = 대체)')){
+      aMsgs=[...aMsgs,...newMsgs];
+    } else { aMsgs=newMsgs; }
+    if(!aSelChar&&aChars.length)aSelChar=aChars[0].id;
+    aRenderCharList();aRenderThread();aUpdateSelDisplay();
+    showBanner('a-import-banner',`✓ ${newMsgs.filter(m=>m.type==='char').length}개 대사 불러왔어요`,true);
+  }
+
+  closeImportModal();
+}
+
+</script>
+</body>
+</html>
