@@ -912,6 +912,16 @@ input[type=range].b-range{accent-color:var(--b-accent)}
     <div class="settings-section-title">텍스트</div>
     <div class="settings-row"><span class="settings-label">글씨 크기</span><div class="settings-control"><input type="range" min="12" max="20" step="1" value="14" id="c-cfg-fs" oninput="cApplyCfg()" style="accent-color:#3c1e1e" /></div><span class="settings-value" style="color:#3c1e1e" id="c-cfg-fs-v">14px</span></div>
     <div class="settings-divider"></div>
+    <div class="settings-section-title">아바타</div>
+    <div class="bg-toggle-row">
+      <div><div class="bg-toggle-label">오른쪽 아바타 표시</div><div class="bg-toggle-desc">오른쪽(나) 말풍선에도 아바타 표시</div></div>
+      <label class="toggle-switch kakao"><input type="checkbox" id="c-show-right-av" onchange="cApplyCfg()" /><span class="toggle-slider"></span></label>
+    </div>
+    <div class="bg-toggle-row">
+      <div><div class="bg-toggle-label">왼쪽 이름 숨기기</div><div class="bg-toggle-desc">왼쪽 말풍선 위 이름 표시 끄기</div></div>
+      <label class="toggle-switch kakao"><input type="checkbox" id="c-hide-left-name" onchange="cApplyCfg()" /><span class="toggle-slider"></span></label>
+    </div>
+    <div class="settings-divider"></div>
     <div class="settings-section-title">배경</div>
     <div class="bg-toggle-row">
       <div><div class="bg-toggle-label">채팅창 배경색 제거</div><div class="bg-toggle-desc">배경을 흰색으로 변경</div></div>
@@ -1364,7 +1374,7 @@ bApplyCfg();
 const C_BUBBLE_PRESETS=['#ffffff','#fee500','#ffd1dc','#d4f1c4','#c4e0f9','#e8d5f5','#ffe0b2','#b2dfdb'];
 let cChars=[],cMsgs=[],cSelChar=null,cEditChar=null,cEditMsgIdx=null,cMsgType='chat';
 let cImgData=null,cImgSrc='url',cBubbleColor='#ffffff',cPos='left';
-let cCfg={fontSize:14,bgColor:'#b2c8df',bgColor2:'#9ab5ce'};
+let cCfg={fontSize:14,bgColor:'#b2c8df',bgColor2:'#9ab5ce',showRightAv:false,hideLeftName:false,noBg:false,noShadow:false};
 
 function cInitBcolorPresets(sel){
   const p=document.getElementById('c-bcolor-presets');p.innerHTML='';
@@ -1519,8 +1529,10 @@ function cBuildBubbleRow(msg,i,isPreview){
   const ch=cChars.find(c=>c.id===msg.charId);if(!ch)return'';
   const isRight=ch.pos==='right';
   const tc=cAutoTextColor(ch.bubbleColor);
-  const avHtml=ch.pos==='left'?`<div class="kmsg-av">${cAvHtml(ch,36)}</div>`:'';
-  const nameHtml=ch.pos==='left'?`<div class="kmsg-name">${esc(ch.name)}</div>`:'';
+  const showRightAv=cCfg.showRightAv;
+  const hideLeftName=cCfg.hideLeftName;
+  const avHtml=(ch.pos==='left'||showRightAv)?`<div class="kmsg-av">${cAvHtml(ch,36)}</div>`:'';
+  const nameHtml=(ch.pos==='left'&&!hideLeftName)?`<div class="kmsg-name">${esc(ch.name)}</div>`:'';
   const bubbleText=esc(msg.text).replace(/\(([^)]+)\)/g,'<span class="action-text">($1)</span>');
   if(isPreview){
     return`<div class="kmsg-row${isRight?' right':''}">
@@ -1585,6 +1597,8 @@ function cApplyCfg(){
   cCfg.fontSize=+document.getElementById('c-cfg-fs').value;
   cCfg.noBg=document.getElementById('c-nobg').checked;
   cCfg.noShadow=document.getElementById('c-noshadow').checked;
+  cCfg.showRightAv=document.getElementById('c-show-right-av').checked;
+  cCfg.hideLeftName=document.getElementById('c-hide-left-name').checked;
   document.getElementById('c-cfg-fs-v').textContent=cCfg.fontSize+'px';
   const bg=cCfg.noBg?'#ffffff':cCfg.bgColor;
   const bg2=cCfg.noBg?'#ffffff':cCfg.bgColor2;
@@ -1593,8 +1607,10 @@ function cApplyCfg(){
   const cs=document.getElementById('c-cfg-style')||(()=>{const el=document.createElement('style');el.id='c-cfg-style';document.head.appendChild(el);return el;})();
   const shadowCss=cCfg.noShadow?`.kmsg-bubble{box-shadow:none!important}`:``; 
   cs.textContent=shadowCss;
+  // Re-render edit view so avatar/name changes show immediately
+  if(document.getElementById('c-chat-body')) cRenderChat();
 }
-function cResetCfg(){cCfg={fontSize:14,bgColor:'#b2c8df',bgColor2:'#9ab5ce',noBg:false,noShadow:false};document.getElementById('c-cfg-fs').value=14;document.getElementById('c-nobg').checked=false;document.getElementById('c-noshadow').checked=false;document.querySelectorAll('.kbg-opt').forEach((b,i)=>b.classList.toggle('active',i===0));cApplyCfg();}
+function cResetCfg(){cCfg={fontSize:14,bgColor:'#b2c8df',bgColor2:'#9ab5ce',noBg:false,noShadow:false,showRightAv:false,hideLeftName:false};document.getElementById('c-cfg-fs').value=14;document.getElementById('c-nobg').checked=false;document.getElementById('c-noshadow').checked=false;document.getElementById('c-show-right-av').checked=false;document.getElementById('c-hide-left-name').checked=false;document.querySelectorAll('.kbg-opt').forEach((b,i)=>b.classList.toggle('active',i===0));cApplyCfg();}
 
 /* C EXPORT */
 function cExportHTML(){
@@ -1603,13 +1619,14 @@ function cExportHTML(){
     if(msg.type==='sys')return`<div style="display:flex;align-items:center;gap:10px;margin:10px 0;font-size:11px;color:rgba(0,0,0,.45)"><span style="flex:1;height:1px;background:rgba(0,0,0,.12)"></span>${esc(msg.text)}<span style="flex:1;height:1px;background:rgba(0,0,0,.12)"></span></div>`;
     const ch=cChars.find(c=>c.id===msg.charId);if(!ch)return'';
     const isRight=ch.pos==='right';const tc=cAutoTextColor(ch.bubbleColor);
-    const avHtml=ch.pos==='left'?(ch.img?`<img src="${ch.img}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;align-self:flex-start;border:1.5px solid rgba(0,0,0,.08)" />`:`<div style="width:36px;height:36px;border-radius:50%;background:${ch.bubbleColor==='#ffffff'?'#888':ch.bubbleColor};color:${tc};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;align-self:flex-start">${esc(ch.name[0])}</div>`):'';
+    const showRightAv=cCfg.showRightAv;const hideLeftName=cCfg.hideLeftName;
+    const avHtml=(ch.pos==='left'||showRightAv)?(ch.img?`<img src="${ch.img}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;align-self:flex-start;border:1.5px solid rgba(0,0,0,.08)" />`:`<div style="width:36px;height:36px;border-radius:50%;background:${ch.bubbleColor==='#ffffff'?'#888':ch.bubbleColor};color:${tc};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;align-self:flex-start">${esc(ch.name[0])}</div>`):'';
     const bubbleText=esc(msg.text).replace(/\(([^)]+)\)/g,'<span style="font-style:italic;opacity:.75">($1)</span>');
     const brL=isRight?'18px 18px 4px 18px':'4px 18px 18px 18px';
     return`<div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:2px;${isRight?'flex-direction:row-reverse':''}">
-      ${avHtml}
+      ${(ch.pos==='left'||showRightAv)?avHtml:''}
       <div style="display:flex;flex-direction:column;max-width:68%;${isRight?'align-items:flex-end':''}">
-        ${ch.pos==='left'?`<div style="font-size:11px;font-weight:600;color:#1a1208;margin-bottom:3px;padding-left:2px">${esc(ch.name)}</div>`:''}
+        ${(ch.pos==='left'&&!hideLeftName)?`<div style="font-size:11px;font-weight:600;color:#1a1208;margin-bottom:3px;padding-left:2px">${esc(ch.name)}</div>`:''}
         <div style="padding:9px 13px;border-radius:${brL};background:${ch.bubbleColor};color:${tc};font-size:${cCfg.fontSize}px;line-height:1.55;word-break:break-word;white-space:pre-wrap;box-shadow:0 1px 2px rgba(0,0,0,.1)">${bubbleText}</div>
       </div>
       <div style="font-size:10px;color:rgba(0,0,0,.4);align-self:flex-end">${msg.time||''}</div>
@@ -1745,8 +1762,10 @@ function cTistoryCopy(){
     const br=isRight?'18px 18px 4px 18px':'4px 18px 18px 18px';
     const shadow=cCfg.noShadow?'none':'0 1px 2px rgba(0,0,0,.1)';
     const bubText=esc(msg.text).replace(/\(([^)]+)\)/g,'<em style="font-style:italic;opacity:.75">($1)</em>');
+    const showRightAv=cCfg.showRightAv;const hideLeftName=cCfg.hideLeftName;
     if(isRight){
       return`<div style="display:flex;flex-direction:row-reverse;align-items:flex-end;gap:6px;margin-bottom:4px">
+  ${showRightAv?`<div style="flex-shrink:0;align-self:flex-start">${avInner}</div>`:''}
   <div style="max-width:68%;display:flex;flex-direction:column;align-items:flex-end">
     <div style="padding:9px 13px;border-radius:${br};background:${ch.bubbleColor};color:${tc};font-size:${fs}px;line-height:1.55;word-break:break-word;white-space:pre-wrap;box-shadow:${shadow};font-family:'Noto Sans KR',AppleGothic,sans-serif">${bubText}</div>
   </div>
@@ -1756,7 +1775,7 @@ function cTistoryCopy(){
     return`<div style="display:flex;align-items:flex-end;gap:6px;margin-bottom:4px">
   ${ch.pos==='left'?`<div style="flex-shrink:0;align-self:flex-start">${avInner}</div>`:''}
   <div style="max-width:68%;display:flex;flex-direction:column">
-    <div style="font-size:11px;font-weight:600;color:#1a1208;margin-bottom:3px;font-family:'Noto Sans KR',AppleGothic,sans-serif">${esc(ch.name)}</div>
+    ${!hideLeftName?`<div style="font-size:11px;font-weight:600;color:#1a1208;margin-bottom:3px;font-family:'Noto Sans KR',AppleGothic,sans-serif">${esc(ch.name)}</div>`:''}
     <div style="padding:9px 13px;border-radius:${br};background:${ch.bubbleColor};color:${tc};font-size:${fs}px;line-height:1.55;word-break:break-word;white-space:pre-wrap;box-shadow:${shadow};font-family:'Noto Sans KR',AppleGothic,sans-serif">${bubText}</div>
   </div>
   <div style="font-size:10px;color:rgba(0,0,0,.4);align-self:flex-end;white-space:nowrap">${msg.time||''}</div>
@@ -1802,17 +1821,31 @@ function colorSwatchHTML(colors){
 ══════════════════════════════════════ */
 function cHandleImport(file){
   if(!file)return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    try{
-      const text=e.target.result;
-      const parsed=parseKakaoTxt(text);
-      if(!parsed.messages.length){showBanner('c-import-banner','메시지를 찾을 수 없습니다.',false);return;}
-      openImportMapModal('c',parsed);
-    }catch(err){showBanner('c-import-banner','파일 파싱 오류: '+err.message,false);}
-  };
-  reader.readAsText(file,'utf-8');
-  // reset input so same file can be re-selected
+  function tryParse(encoding){
+    const reader=new FileReader();
+    reader.onerror=()=>{
+      if(encoding==='utf-8') tryParse('euc-kr');
+      else showBanner('c-import-banner','파일을 읽을 수 없습니다.',false);
+    };
+    reader.onload=e=>{
+      try{
+        let text=e.target.result;
+        if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
+        const parsed=parseKakaoTxt(text);
+        if(!parsed.messages.length){
+          if(encoding==='utf-8'){tryParse('euc-kr');return;}
+          showBanner('c-import-banner','메시지를 찾을 수 없습니다. (형식: [이름] [오후 6:03] 내용)',false);
+          return;
+        }
+        openImportMapModal('c',parsed);
+      }catch(err){
+        if(encoding==='utf-8') tryParse('euc-kr');
+        else showBanner('c-import-banner','파싱 오류: '+err.message,false);
+      }
+    };
+    reader.readAsText(file,encoding);
+  }
+  tryParse('utf-8');
   document.querySelector('#c-drop-zone input[type=file]').value='';
 }
 
@@ -1868,9 +1901,11 @@ function parseKakaoTxt(text){
 function aHandleImport(file){
   if(!file)return;
   const reader=new FileReader();
+  reader.onerror=()=>showBanner('a-import-banner','파일을 읽을 수 없습니다.',false);
   reader.onload=e=>{
     try{
-      const text=e.target.result;
+      let text=e.target.result;
+      if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
       const parsed=parseProseTxt(text);
       if(!parsed.messages.length){showBanner('a-import-banner','메시지를 찾을 수 없습니다.',false);return;}
       openImportMapModal('a',parsed);
